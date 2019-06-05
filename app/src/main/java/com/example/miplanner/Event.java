@@ -93,11 +93,16 @@ public class Event implements Parcelable {
 
     public String getLocation () {  return location;  }
 
+    public String getRepeat () {  return repeat;  }
+
+    public String getEndRepeat () {  return endRepeat;   }
+
     public void setName(String new_name) {
         name = new_name;
     }
 
     public void setLocation(String location) {  this.location = location;  }
+
 
 
     @Override

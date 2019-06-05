@@ -281,7 +281,13 @@ public class AddEventActivity extends AppCompatActivity {
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
-                        repeat = "* * * 1 * "+ calStart.get(Calendar.DAY_OF_WEEK) +" *";
+                        String days = calStart.get(Calendar.DAY_OF_WEEK)-1+"";
+                        calStart.add(Calendar.DAY_OF_YEAR, 1);
+                        while (calStart.before(calEnd)) {
+                            days += ","+(calStart.get(Calendar.DAY_OF_WEEK)-1);
+                            calStart.add(Calendar.DAY_OF_YEAR, 1);
+                        }
+                        repeat = "* * * 1 * "+ days +" *";
                         end_repeat = "";
                     }
 
@@ -313,41 +319,76 @@ public class AddEventActivity extends AppCompatActivity {
                 }
                 if (calStart.after(calEnd)) {
                     Toast.makeText(AddEventActivity.this, "Некорректные дата начала и дата конца события", Toast.LENGTH_SHORT).show();
+                    return;
                 }
-                else {
-                    if (nameEvent.getText().toString().replaceAll("[\\s\\d]", "").length() > 0) {
-                        //events[size] = new Event(size, nameEvent.getText().toString(), selectedStart, selectdEnd, descriptionEvent.getText().toString());
-                        //size += 1;
 
-                        mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
-
-                        Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
-                        Bundle bundle = new Bundle();
-                        //bundle.putParcelableArray("events", events);
-                        //bundle.putInt("size", size);
-                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                        Calendar cal = new GregorianCalendar();
-                        try {
-                            cal.setTime(dateFormat.parse(selectedStart));
-                        } catch (ParseException e) {
-                            e.printStackTrace();
+                if (!repeat.equals("")){
+                    Calendar temp = new GregorianCalendar();
+                    temp.setTime(calStart.getTime());
+                    String[] part = repeat.split(" ");
+                    if (!part[6].equals("*")) {
+                        temp.add(Calendar.YEAR, Integer.parseInt(part[6]));
+                        if (temp.before(calEnd)) {
+                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
+                            return;
                         }
-                        dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-                        bundle.putString("Date", dateFormat.format(cal.getTime()));
-                        dateFormat = new SimpleDateFormat("HH");
-                        bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
-                        intent.putExtras(bundle);
-                        //intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-                        startActivity(intent);
-                        overridePendingTransition (R.anim.enter, R.anim.exit);
-                        /*Fragment fragment = new CalendarController();
-                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                        ft.add(R.id.container, fragment);
-                        ft.commit();*/
+                        temp.setTime(calStart.getTime());
                     }
-                    else
-                        Toast.makeText(AddEventActivity.this, "Название события не корректно", Toast.LENGTH_SHORT).show();
+                    if (!part[4].equals("*")) {
+                        temp.add(Calendar.MONTH, Integer.parseInt(part[4]));
+                        if (temp.before(calEnd)) {
+                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        temp.setTime(calStart.getTime());
+                    }
+                    if (!part[3].equals("*")) {
+                        temp.add(Calendar.WEEK_OF_YEAR, Integer.parseInt(part[3]));
+                        if (temp.before(calEnd)) {
+                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        temp.setTime(calStart.getTime());
+                    }
+                    if (!part[2].equals("*")) {
+                        temp.add(Calendar.DAY_OF_YEAR, Integer.parseInt(part[2]));
+                        if (temp.before(calEnd)) {
+                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        temp.setTime(calStart.getTime());
+                    }
                 }
+
+
+                if (nameEvent.getText().toString().replaceAll("[\\s\\d]", "").length() > 0) {
+                    //events[size] = new Event(size, nameEvent.getText().toString(), selectedStart, selectdEnd, descriptionEvent.getText().toString());
+                    //size += 1;
+
+                    mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
+
+                    Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
+                    Bundle bundle = new Bundle();
+
+                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                    Calendar cal = new GregorianCalendar();
+                    try {
+                        cal.setTime(dateFormat.parse(selectedStart));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
+                    bundle.putString("Date", dateFormat.format(cal.getTime()));
+                    dateFormat = new SimpleDateFormat("HH");
+                    bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
+                    intent.putExtras(bundle);
+
+                    startActivity(intent);
+                    overridePendingTransition (R.anim.enter, R.anim.exit);
+
+                }
+                else
+                    Toast.makeText(AddEventActivity.this, "Название события не корректно", Toast.LENGTH_SHORT).show();
             }
         });
     }

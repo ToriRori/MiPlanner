@@ -7,17 +7,18 @@
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
         android:layout_marginTop="20dp"
         android:layout_weight="1"
         android:text="Повторяется раз в" />
 
     <EditText
         android:id="@+id/countRepeat"
-        android:layout_width="wrap_content"
+        android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_below="@+id/textView2"
-
-        android:layout_marginTop="1dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="10dp"
         android:inputType="number"
         android:maxLength="2"
         android:outlineAmbientShadowColor="@color/calendar_text_current_day"
@@ -28,10 +29,10 @@
 
     <Spinner
         android:id="@+id/spinner"
-        android:layout_width="262dp"
+        android:layout_width="180dp"
         android:layout_height="45dp"
         android:layout_below="@+id/textView2"
-
+        android:layout_marginTop="10dp"
         android:layout_toRightOf="@+id/countRepeat"
         android:layout_weight="1" />
 
@@ -40,17 +41,20 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/spinner"
+        android:paddingTop="10dp"
         android:layout_marginTop="1dp"
         android:orientation="vertical"
         >
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingLeft="20dp"
             android:text="Когда повторяется" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:orientation="horizontal">
 
             <Button
@@ -125,14 +129,28 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="20dp"
         android:layout_below="@id/spinner">
 
-        <Spinner
-            android:id="@+id/monthType"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Когда повторяется" />
+
+        <LinearLayout
             android:layout_width="wrap_content"
+            android:layout_marginTop="10dp"
             android:layout_height="wrap_content">
 
-        </Spinner>
+            <Spinner
+                android:id="@+id/monthType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+            </Spinner>
+
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -141,6 +159,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
         android:layout_below="@id/week_attr"
         android:layout_weight="1"
         android:text="Заканчивается" />
@@ -149,37 +168,45 @@
         android:id="@+id/endRepeat"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
         android:layout_below="@id/textView3">
 
         <RadioButton
             android:id="@+id/neverEnding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="Никогда"/>
 
         <RadioButton
             android:id="@+id/dayEnding"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="" />
 
-        <EditText
+        <TextView
             android:id="@+id/dateEnding"
-            android:layout_width="wrap_content"
+            android:layout_width="120dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="-42dp"
-            android:layout_marginStart="33dp"/>
+            android:clickable="true"
+            android:textSize="14sp"
+            android:layout_marginTop="-25dp"
+            android:layout_marginStart="53dp">
+        </TextView>
 
         <RadioButton
             android:id="@+id/timesEnding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="После повтора" />
 
         <EditText
             android:id="@+id/timesCount"
-            android:layout_width="wrap_content"
+            android:layout_width="30dp"
             android:layout_height="wrap_content"
+            android:textSize="14sp"
             android:layout_marginTop="-42dp"
             android:layout_marginStart="143dp"/>
 

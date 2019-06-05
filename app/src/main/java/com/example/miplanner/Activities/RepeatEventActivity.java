@@ -1,5 +1,7 @@
 package com.example.miplanner.Activities;
 
+import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -7,6 +9,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -15,10 +18,18 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.miplanner.Data.CalendarDbHelper;
+import com.example.miplanner.Event;
 import com.example.miplanner.R;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 public class RepeatEventActivity extends AppCompatActivity {
 
+    TextView dateEnding;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -31,14 +42,24 @@ public class RepeatEventActivity extends AppCompatActivity {
         final RadioGroup ending = findViewById(R.id.endRepeat);
         final RadioButton neverEnding = findViewById(R.id.neverEnding);
         final RadioButton dayEnding = findViewById(R.id.dayEnding);
-        final EditText dateEnding = findViewById(R.id.dateEnding);
+        dateEnding = findViewById(R.id.dateEnding);
         final RadioButton timesEnding = findViewById(R.id.timesEnding);
         final EditText timesCount = findViewById(R.id.timesCount);
 
         final Bundle bundle = getIntent().getExtras();
-        String endDate = bundle.getString("end");
+        String endDate = bundle.getString("end_date");
         dateEnding.setText(endDate);
         timesCount.setText("1");
+
+        dateEnding.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Bundle temp = new Bundle();
+                bundle.putString("date", dateEnding.getText().toString());
+                showDialog(1, bundle);
+            }
+        });
+
 
         String[] types = {"день", "неделя", "месяц", "год"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, types);
@@ -237,7 +258,6 @@ public class RepeatEventActivity extends AppCompatActivity {
                         Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
                         return;
                     }
-
                     intent.putExtra("weekChoice", week);
                 }
                 if (repeatType.getSelectedItemPosition() == 2)
@@ -275,5 +295,106 @@ public class RepeatEventActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        String ok = bundle.getString("ok");
+        if (ok != null) {
+            long id = bundle.getLong("id");
+            CalendarDbHelper mDbHelper = new CalendarDbHelper(this);
+            Event event = mDbHelper.getEventById((int)id);
+            String rep = event.getRepeat();
+            String[] part = rep.split(" ");
+            if (!part[6].equals("*")) {
+                repeatTimes.setText(part[6]);
+                repeatType.setSelection(3);
+            }
+            else if (!part[4].equals("*")) {
+                repeatTimes.setText(part[4]);
+                repeatType.setSelection(2);
+                if (part[3].split("-").length > 1)
+                    monthSpinner.setSelection(1);
+                else
+                    monthSpinner.setSelection(0);
+            }
+            else if (!part[3].equals("*")) {
+                repeatTimes.setText(part[3]);
+                repeatType.setSelection(1);
+                String[] days = part[5].split(",");
+                for (String day: days) {
+                    switch (day) {
+                        case "0":
+                            monBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                            monBtn.setTextColor(getResources().getColor(R.color.white));
+                            break;
+                        case "1":
+                            tueBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                            tueBtn.setTextColor(getResources().getColor(R.color.white));
+                            break;
+                        case "2":
+                            wedBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                            wedBtn.setTextColor(getResources().getColor(R.color.white));
+                            break;
+                        case "3":
+                            thuBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                            thuBtn.setTextColor(getResources().getColor(R.color.white));
+                            break;
+                        case "4":
+                            friBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                            friBtn.setTextColor(getResources().getColor(R.color.white));
+                            break;
+                        case "5":
+                            satBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                            satBtn.setTextColor(getResources().getColor(R.color.white));
+                            break;
+                        case "6":
+                            sunBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                            sunBtn.setTextColor(getResources().getColor(R.color.white));
+                            break;
+                    }
+                }
+            }
+            else if (!part[2].equals("*")) {
+                repeatTimes.setText(part[2]);
+                repeatType.setSelection(0);
+            }
+            String end = event.getEndRepeat();
+            if (end.equals(""))
+            {
+                ((RadioButton)ending.getChildAt(0)).setChecked(true);
+                neverEnding.setSelected(true);
+            }
+            else if (end.split(".").length > 1)
+            {
+                ((RadioButton)ending.getChildAt(1)).setChecked(true);
+                dateEnding.setText(end);
+            }
+            else
+            {
+                ((RadioButton)ending.getChildAt(2)).setChecked(true);
+            }
+        }
     }
+
+    protected Dialog onCreateDialog(int id, Bundle bundle) {
+        if (id == 1) {
+            String date = bundle.getString("date");
+            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+            Calendar cal = new GregorianCalendar();
+            try {
+                cal.setTime(format.parse(date));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            DatePickerDialog tpd = new DatePickerDialog(this, myCallBack, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DAY_OF_MONTH));
+            return tpd;
+        }
+        return super.onCreateDialog(id);
+    }
+
+    DatePickerDialog.OnDateSetListener myCallBack = new DatePickerDialog.OnDateSetListener() {
+
+        public void onDateSet(DatePicker view, int year, int monthOfYear,
+                              int dayOfMonth) {
+            dateEnding.setText(dayOfMonth+"."+monthOfYear+"."+year);
+        }
+    };
 }

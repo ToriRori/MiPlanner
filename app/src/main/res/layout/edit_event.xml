@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:tools="http://schemas.android.com/tools"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/calendar_future_days_bg">
 
     <ScrollView
@@ -13,7 +13,8 @@ android:layout_height="match_parent"
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:theme="@style/AppTheme">
 
             <TextView
                 android:id="@+id/textView4"
@@ -36,103 +37,102 @@ android:layout_height="match_parent"
 
 
             <TextView
-        android:id="@+id/textView5"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/nameText"
-        android:layout_marginTop="2dp"
-        android:text="Дата начала"
+                android:id="@+id/textView5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/nameText"
+                android:layout_marginTop="2dp"
+                android:text="Дата начала"
                 android:textColor="@color/blue_dark"/>
 
-    <DatePicker
-        android:id="@+id/datePickerStart"
-        android:layout_width="match_parent"
-        android:layout_height="164dp"
-        android:layout_below="@+id/textView5"
-        android:layout_marginTop="0dp"
-        android:calendarViewShown="false"
-        android:datePickerMode="spinner"
-        tools:datePickerMode="spinner"
-        android:calendarTextColor="@color/blue_dark"
-        android:outlineAmbientShadowColor="@color/calendar_text_current_day"/>
+            <DatePicker
+                android:id="@+id/datePickerStart"
+                android:layout_width="match_parent"
+                android:layout_height="164dp"
+                android:layout_below="@+id/textView5"
+                android:layout_marginTop="0dp"
+                android:calendarViewShown="false"
+                android:datePickerMode="spinner"
+                tools:datePickerMode="spinner"
+                android:calendarTextColor="@color/blue_dark"
+                android:outlineAmbientShadowColor="@color/calendar_text_current_day"/>
 
-    <TextView
-        android:id="@+id/textView6"
-        android:layout_width="208dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/datePickerStart"
-        android:layout_marginTop="5dp"
-        android:text="Время начала"
-        android:textColor="@color/blue_dark"/>
+            <TextView
+                android:id="@+id/textView6"
+                android:layout_width="208dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/datePickerStart"
+                android:layout_marginTop="5dp"
+                android:text="Время начала"
+                android:textColor="@color/blue_dark"/>
 
-    <TimePicker
-        android:id="@+id/timePickerStart"
-        android:layout_width="match_parent"
-        android:layout_height="151dp"
-        android:layout_below="@+id/textView6"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="3dp"
-        android:layout_marginEnd="0dp"
-        android:timePickerMode="spinner"
-        android:amPmTextColor="@color/blue_dark"
-        android:outlineAmbientShadowColor="@color/calendar_text_current_day"/>
+            <TimePicker
+                android:id="@+id/timePickerStart"
+                android:layout_width="match_parent"
+                android:layout_height="151dp"
+                android:layout_below="@+id/textView6"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="3dp"
+                android:layout_marginEnd="0dp"
+                android:timePickerMode="spinner"
+                android:amPmTextColor="@color/blue_dark"
+                android:outlineAmbientShadowColor="@color/calendar_text_current_day"/>
 
-    <TextView
-        android:id="@+id/textView7"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/timePickerStart"
-        android:layout_marginTop="2dp"
-        android:text="Дата конца"
-        android:textColor="@color/blue_dark"/>
+            <TextView
+                android:id="@+id/textView7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/timePickerStart"
+                android:layout_marginTop="2dp"
+                android:text="Дата конца"
+                android:textColor="@color/blue_dark"/>
 
-    <DatePicker
-        android:id="@+id/datePickerEnd"
-        android:layout_width="match_parent"
-        android:layout_height="164dp"
-        android:layout_below="@+id/textView7"
-        android:layout_marginTop="0dp"
-        android:calendarViewShown="false"
-        android:datePickerMode="spinner"
-        tools:datePickerMode="spinner" />
+            <DatePicker
+                android:id="@+id/datePickerEnd"
+                android:layout_width="match_parent"
+                android:layout_height="164dp"
+                android:layout_below="@+id/textView7"
+                android:layout_marginTop="0dp"
+                android:calendarViewShown="false"
+                android:datePickerMode="spinner"
+                tools:datePickerMode="spinner" />
 
-    <TextView
-        android:id="@+id/textView8"
-        android:layout_width="208dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/datePickerEnd"
-        android:layout_marginTop="5dp"
-        android:text="Время конца"
-        android:textColor="@color/blue_dark"/>
+            <TextView
+                android:id="@+id/textView8"
+                android:layout_width="208dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/datePickerEnd"
+                android:layout_marginTop="5dp"
+                android:text="Время конца"
+                android:textColor="@color/blue_dark"/>
 
-    <TimePicker
-        android:id="@+id/timePickerEnd"
-        android:layout_width="match_parent"
-        android:layout_height="151dp"
-        android:layout_below="@+id/textView8"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="3dp"
-        android:layout_marginEnd="0dp"
-        android:timePickerMode="spinner" />
+            <TimePicker
+                android:id="@+id/timePickerEnd"
+                android:layout_width="match_parent"
+                android:layout_height="151dp"
+                android:layout_below="@+id/textView8"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="3dp"
+                android:layout_marginEnd="0dp"
+                android:timePickerMode="spinner" />
 
-    <TextView
-        android:id="@+id/textView9"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/timePickerEnd"
-        android:text="Описание события"
-        android:textColor="@color/blue_dark"/>
+            <TextView
+                android:id="@+id/textView9"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/timePickerEnd"
+                android:text="Описание события"
+                android:textColor="@color/blue_dark"/>
 
-    <EditText
-        android:id="@+id/descriptionText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/textView9"
-        android:layout_alignParentTop="true"
-        android:textColor="@color/blue_dark"
-        android:shadowColor="@color/calendar_text_current_day"
-        android:outlineSpotShadowColor="@color/calendar_text_current_day"
-        android:outlineAmbientShadowColor="@color/calendar_text_current_day" />
+            <EditText
+                android:id="@+id/descriptionText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/textView9"
+                android:layout_alignParentTop="true"
+                android:textColor="@color/blue_dark"
+                android:shadowColor="@color/calendar_text_current_day"/>
+
 
             <TextView
                 android:id="@+id/textView10"
@@ -149,17 +149,23 @@ android:layout_height="match_parent"
                 android:layout_below="@+id/textView10"
                 android:layout_alignParentTop="true"
                 android:textColor="@color/blue_dark"
-                android:shadowColor="@color/calendar_text_current_day"
-                android:outlineSpotShadowColor="@color/calendar_text_current_day"
-                android:outlineAmbientShadowColor="@color/calendar_text_current_day" />
+                android:shadowColor="@color/calendar_text_current_day"/>
 
 
             <Button
-        android:id="@+id/buttonAddEvent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/timePickerEnd"
-        android:text="Изменить событие" />
+                android:id="@+id/buttonRepeat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@+id/timePickerEnd"
+                android:text="Не повторяется" />
+
+            <Button
+                android:id="@+id/buttonAddEvent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_alignBottom="@+id/buttonRepeat"
+                android:text="Изменить событие" />
 
         </LinearLayout>
 

@@ -216,7 +216,7 @@ public class CalendarDbHelper extends SQLiteOpenHelper {
         return new Event(id, mName, mStartDate, mEndDate, mDescription, mLocation, mRepeat, mRepeatEnd);
     }
 
-    public void editEventById(int id, String name, String description, String location, String repeat, String date_start, String date_end) {
+    public void editEventById(int id, String name, String description, String location, String repeat, String end_repeat, String date_start, String date_end) {
         // Gets the database in write mode
         SQLiteDatabase db = this.getWritableDatabase();
         // Создаем объект ContentValues, где имена столбцов ключи,
@@ -228,6 +228,7 @@ public class CalendarDbHelper extends SQLiteOpenHelper {
         values.put(Events.EventAdd.COLUMN_DATE_START, date_start);
         values.put(Events.EventAdd.COLUMN_DATE_END, date_end);
         values.put(Events.EventAdd.COLUMN_REPEAT, repeat);
+        values.put(Events.EventAdd.COLUMN_REPEAT_END, end_repeat);
 
 
         db.update(Events.EventAdd.TABLE_NAME,

@@ -64,7 +64,7 @@ public class DateHelper {
         if (sameDate(selectedCal, startCal)||(sameDate(selectedCal, endCal))) {
             return true;
         } else {
-            return selectedCal.after(startCal) && selectedCal.before(endCal);
+            return (selectedCal.after(startCal) && selectedCal.before(endCal))||(selectedCal.before(startCal) && selectedCal.after(endCal));
         }
     }
 

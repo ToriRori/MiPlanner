@@ -5,6 +5,8 @@ import com.github.tibolte.agendacalendarview.utils.DateHelper;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
+import android.widget.Toast;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -175,12 +177,26 @@ public class DayItem implements Parcelable {
                             cal2.setTime(events.get(i).getEndTime().getTime());
                             cal1.add(Calendar.WEEK_OF_YEAR, j);
                             cal2.add(Calendar.WEEK_OF_YEAR, j);
+                            if ((calendar.get(Calendar.DAY_OF_MONTH) == 27)&&(calendar.get(Calendar.MONTH) == 5)){
+                                Log.d("hahha", "ooops!");
+                            }
                             String[] days = parts[5].split(",");
                             for (String day : days) {
-                                cal1.set(Calendar.DAY_OF_WEEK, 1);
-                                cal1.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day));
-                                cal2.set(Calendar.DAY_OF_WEEK, 1);
-                                cal2.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day));
+                                int day1 = cal1.get(Calendar.DAY_OF_MONTH);
+                                int temp = cal1.getFirstDayOfWeek();
+                                int day2 = cal1.get(Calendar.MONTH);
+                                cal1.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                                day1 = cal1.get(Calendar.DAY_OF_MONTH);
+                                day2 = cal1.get(Calendar.MONTH);
+                                cal1.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day)-1);
+                                day1 = cal1.get(Calendar.DAY_OF_MONTH);
+                                day2 = cal1.get(Calendar.MONTH);
+                                cal2.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                                day1 = cal2.get(Calendar.DAY_OF_MONTH);
+                                day2 = cal2.get(Calendar.MONTH);
+                                cal2.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day)-1);
+                                day1 = cal2.get(Calendar.DAY_OF_MONTH);
+                                day2 = cal2.get(Calendar.MONTH);
                                 if (cal1.before(events.get(i).getStartTime()))
                                     continue;
                                 if (DateHelper.isBetweenInclusive(current, cal1, cal2)) {

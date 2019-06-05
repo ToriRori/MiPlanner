@@ -308,11 +308,27 @@ public class CalendarManager {
                                 cal1.add(Calendar.WEEK_OF_YEAR, i);
                                 cal2.add(Calendar.WEEK_OF_YEAR, i);
                                 String[] days = parts[5].split(",");
-                                for (String day: days) {
-                                    cal1.set(Calendar.DAY_OF_WEEK, 1);
-                                    cal1.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day));
-                                    cal2.set(Calendar.DAY_OF_WEEK, 1);
-                                    cal2.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day));
+                                boolean flag = false;
+                                for (int j = 0; j < days.length; j++) {
+                                    if (!flag) {
+                                        cal1.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                                        cal1.add(Calendar.DAY_OF_WEEK, Integer.parseInt(days[j])-1);
+                                        cal2.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                                        cal2.add(Calendar.DAY_OF_WEEK, Integer.parseInt(days[j])-1);
+                                        if (days[(j+1)%days.length].equals(Integer.toString((Integer.parseInt(days[j]) + 1)%7))) {
+                                            flag = true;
+                                            continue;
+                                        }
+                                    }
+                                    else {
+                                        cal2.add(Calendar.DAY_OF_WEEK, 1);
+                                        if (days[(j+1)%days.length].equals(Integer.toString((Integer.parseInt(days[j]) + 1)%7))) {
+                                            flag = true;
+                                            continue;
+                                        }
+                                        else
+                                            flag = false;
+                                    }
                                     if (cal1.before(event.getStartTime()))
                                         continue;
                                     if (DateHelper.isBetweenUninclusive(dayItem.getDate(), cal1, cal2)) {
@@ -360,6 +376,8 @@ public class CalendarManager {
 
                                     }
                                     if (DateHelper.sameDate(cal2, cal1) && (DateHelper.sameDate(cal2, dayItem.getDate()) || DateHelper.sameDate(cal1, dayItem.getDate()))) {
+                                        int day1 = cal1.get(Calendar.DAY_OF_MONTH);
+                                        int day2 = cal2.get(Calendar.DAY_OF_MONTH);
                                         CalendarEvent copy = event.copy();
                                         Calendar dayInstance = Calendar.getInstance();
                                         dayInstance.setTime(dayItem.getDate());
