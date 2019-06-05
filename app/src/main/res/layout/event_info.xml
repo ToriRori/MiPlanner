@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:background="@drawable/corners2">
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp">
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:id = "@+id/event_title"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16dp"/>
+            <TextView
+                android:id = "@+id/event_date1"
+                android:layout_below="@id/event_title"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"/>
+            <TextView
+                android:id = "@+id/event_date2"
+                android:layout_below="@id/event_date1"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:id="@+id/event_description"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/event_date2" />
+
+            <LinearLayout
+                android:id = "@+id/location_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:gravity="center_vertical"
+                android:layout_below="@id/event_description"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/img_location"/>
+
+                <TextView
+                    android:id="@+id/event_location"
+                    android:layout_marginStart="12dp"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/dismiss"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/location_layout"
+                android:layout_centerHorizontal="true"
+                android:text="Back"
+                android:textColor="@android:color/black" />
+        </RelativeLayout>
+    </RelativeLayout>
+</RelativeLayout>

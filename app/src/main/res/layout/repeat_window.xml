@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_weight="1"
+        android:text="Повторяется раз в" />
+
+    <EditText
+        android:id="@+id/countRepeat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView2"
+
+        android:layout_marginTop="1dp"
+        android:inputType="number"
+        android:maxLength="2"
+        android:outlineAmbientShadowColor="@color/calendar_text_current_day"
+        android:outlineSpotShadowColor="@color/calendar_text_current_day"
+        android:shadowColor="@color/calendar_text_current_day"
+        android:textColor="@color/blue_dark" />
+
+
+    <Spinner
+        android:id="@+id/spinner"
+        android:layout_width="262dp"
+        android:layout_height="45dp"
+        android:layout_below="@+id/textView2"
+
+        android:layout_toRightOf="@+id/countRepeat"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:id="@+id/week_attr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/spinner"
+        android:layout_marginTop="1dp"
+        android:orientation="vertical"
+        >
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Когда повторяется" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/monday_btn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/corners2"
+                android:layout_weight="1"
+                android:textColor="@color/black"
+                android:text="ПН" />
+
+            <Button
+                android:id="@+id/tuesday_btn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/corners2"
+                android:layout_weight="1"
+                android:textColor="@color/black"
+                android:text="ВТ" />
+
+            <Button
+                android:id="@+id/wednesday_btn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/corners2"
+                android:layout_weight="1"
+                android:textColor="@color/black"
+                android:text="СР" />
+
+            <Button
+                android:id="@+id/thursday_btn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/corners2"
+                android:layout_weight="1"
+                android:textColor="@color/black"
+                android:text="ЧТ" />
+
+            <Button
+                android:id="@+id/friday_btn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/corners2"
+                android:layout_weight="1"
+                android:textColor="@color/black"
+                android:text="ПТ" />
+
+            <Button
+                android:id="@+id/saturday_btn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/corners2"
+                android:textColor="@color/black"
+                android:layout_weight="1"
+                android:text="СБ" />
+
+            <Button
+                android:id="@+id/sunday_btn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/corners2"
+                android:layout_weight="1"
+                android:textColor="@color/black"
+                android:text="ВС" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/month_attr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@id/spinner">
+
+        <Spinner
+            android:id="@+id/monthType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+        </Spinner>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_below="@id/week_attr"
+        android:layout_weight="1"
+        android:text="Заканчивается" />
+
+    <RadioGroup
+        android:id="@+id/endRepeat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textView3">
+
+        <RadioButton
+            android:id="@+id/neverEnding"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Никогда"/>
+
+        <RadioButton
+            android:id="@+id/dayEnding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="" />
+
+        <EditText
+            android:id="@+id/dateEnding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-42dp"
+            android:layout_marginStart="33dp"/>
+
+        <RadioButton
+            android:id="@+id/timesEnding"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="После повтора" />
+
+        <EditText
+            android:id="@+id/timesCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-42dp"
+            android:layout_marginStart="143dp"/>
+
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/finish"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:text="Готово"/>
+
+</RelativeLayout>

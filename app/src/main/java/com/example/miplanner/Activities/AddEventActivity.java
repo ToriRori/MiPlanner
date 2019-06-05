@@ -1,0 +1,354 @@
+package com.example.miplanner.Activities;
+
+import android.content.Intent;
+import android.media.tv.TvContract;
+import android.os.Bundle;
+import android.os.Parcelable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.PopupWindow;
+import android.widget.TimePicker;
+import android.widget.Toast;
+
+import com.example.miplanner.Data.CalendarDbHelper;
+import com.example.miplanner.Event;
+import com.example.miplanner.Fragments.Calendar.CalendarController;
+import com.example.miplanner.R;
+import com.example.miplanner.Event;
+import com.example.miplanner.R;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+public class AddEventActivity extends AppCompatActivity {
+
+    Event[] events;
+    int size;
+
+    private CalendarDbHelper mDbHelper;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.add_event);
+        Button addBtn = findViewById(R.id.buttonAddEvent);
+        final Button repeatbtn = findViewById(R.id.buttonRepeat);
+
+        mDbHelper = new CalendarDbHelper(this);
+
+
+        TimePicker tpStart = findViewById(R.id.timePickerStart);
+        DatePicker dpStart = findViewById(R.id.datePickerStart);
+        TimePicker tpEnd = findViewById(R.id.timePickerEnd);
+        DatePicker dpEnd = findViewById(R.id.datePickerEnd);
+        final EditText et = findViewById(R.id.nameText);
+        final EditText descriptionEvent = findViewById(R.id.descriptionText);
+        final EditText locationText = findViewById(R.id.locationText);
+        tpStart.setIs24HourView(true);
+        tpEnd.setIs24HourView(true);
+
+        final Bundle bundle = getIntent().getExtras();
+        String date = null, startDate = null, endDate = null, startTime = null, endTime = null, name = null, descr = null, loc = null;
+        if(bundle != null) {
+            date = bundle.getString("day");
+            if (bundle.getString("rep") != null)
+                repeatbtn.setText("Другое...");
+            startDate = bundle.getString("start_date");
+            endDate = bundle.getString("end_date");
+            startTime = bundle.getString("start_time");
+            endTime = bundle.getString("end_time");
+            name = bundle.getString("name");
+            descr = bundle.getString("descr");
+            loc = bundle.getString("loc");
+        }
+
+        if (date != null) {
+            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+            Calendar cal = new GregorianCalendar();
+            try {
+                cal.setTime(format.parse(date));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            dpStart.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), null);
+            dpEnd.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), null);
+            tpStart.setHour(0);
+            tpStart.setMinute(0);
+            tpEnd.setHour(0);
+            tpEnd.setMinute(0);
+        }
+
+        if (startDate != null) {
+            String[] part = startDate.split(".");
+            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1]), Integer.parseInt(part[0]), null);
+        }
+
+        if (endDate != null) {
+            String[] part = endDate.split(".");
+            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part[1]), Integer.parseInt(part[0]), null);
+        }
+
+        if (startTime != null) {
+            String[] part = startTime.split(":");
+            tpStart.setHour(Integer.parseInt(part[0]));
+            tpEnd.setMinute(Integer.parseInt(part[1]));
+        }
+
+        if (endTime != null) {
+            String[] part = endTime.split(":");
+            tpStart.setHour(Integer.parseInt(part[0]));
+            tpEnd.setMinute(Integer.parseInt(part[1]));
+        }
+
+        if (name != null) {
+            et.setText(name);
+        }
+
+        if (descr != null) {
+            descriptionEvent.setText(descr);
+        }
+
+        if (loc != null) {
+            locationText.setText(loc);
+        }
+
+        repeatbtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LayoutInflater layoutInflater
+                        = (LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE);
+                final View popupView = layoutInflater.inflate(R.layout.repeat_info, null);
+                final PopupWindow popupWindow = new PopupWindow(
+                        popupView,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT, true);
+                Button noRep = popupView.findViewById(R.id.noRepeat);
+                Button dayRep = popupView.findViewById(R.id.dayRepeat);
+                Button weekRep = popupView.findViewById(R.id.weekRepeat);
+                Button monthRep = popupView.findViewById(R.id.monthRepeat);
+                Button yearRep = popupView.findViewById(R.id.yearRepeat);
+                Button othRep = popupView.findViewById(R.id.otherRepeat);
+
+                noRep.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        repeatbtn.setText("Не повторяется");
+                    }
+                });
+
+                dayRep.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        repeatbtn.setText("Каждый день");
+                    }
+                });
+
+                weekRep.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        repeatbtn.setText("Каждую неделю");
+                    }
+                });
+
+                monthRep.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        repeatbtn.setText("Каждый месяц");
+                    }
+                });
+
+                yearRep.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        repeatbtn.setText("Каждый год");
+                    }
+                });
+
+                othRep.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        DatePicker dpStart = findViewById(R.id.datePickerStart);
+                        TimePicker tpStart = findViewById(R.id.timePickerStart);
+                        DatePicker dpEnd = findViewById(R.id.datePickerEnd);
+                        TimePicker tpEnd = findViewById(R.id.timePickerEnd);
+
+                        String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear();
+                        String selectedEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear();
+                        String selectedStartt = tpStart.getHour()+":"+tpStart.getMinute();
+                        String selectedEndt = tpEnd.getHour()+":"+tpEnd.getMinute();
+
+
+                        popupWindow.dismiss();
+
+                        Intent intent = new Intent(AddEventActivity.this, RepeatEventActivity.class);
+                        intent.putExtra("start_date", selectedStart);
+                        intent.putExtra("end_date", selectedEnd);
+                        intent.putExtra("name", et.getText().toString());
+                        intent.putExtra("start_time", selectedStartt);
+                        intent.putExtra("end_time", selectedEndt);
+                        intent.putExtra("descr", descriptionEvent.getText().toString());
+                        intent.putExtra("loc", locationText.getText().toString());
+                        startActivity(intent);
+                    }
+                });
+
+                popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
+            }
+        });
+
+        addBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText nameEvent = findViewById(R.id.nameText);
+                DatePicker dpStart = findViewById(R.id.datePickerStart);
+                TimePicker tpStart = findViewById(R.id.timePickerStart);
+                DatePicker dpEnd = findViewById(R.id.datePickerEnd);
+                TimePicker tpEnd = findViewById(R.id.timePickerEnd);
+                EditText descriptionEvent = findViewById(R.id.descriptionText);
+                EditText locationText = findViewById(R.id.locationText);
+
+                nameEvent.clearFocus();
+                descriptionEvent.clearFocus();
+                locationText.clearFocus();
+
+                String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear()+" "+tpStart.getHour()+":"+tpStart.getMinute();
+                String selectdEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+tpEnd.getHour()+":"+tpEnd.getMinute();
+
+                String repeat = "";
+                String end_repeat = "";
+
+                if (repeatbtn.getText().equals("Другое...")) {
+                    String repeatTimes = bundle.getString("count");
+                    int repeatType = bundle.getInt("type");
+
+                    switch (repeatType) {
+                        case 0:
+                            repeat = "* * "+repeatTimes+" * * * *";
+                            break;
+                        case 1:
+                            String days = bundle.getString("weekChoice");
+                            repeat = "* * * "+repeatTimes+" * "+days+" *";
+                            break;
+                        case 2:
+                            int monthType = bundle.getInt("monthChoice");
+                            if (monthType == 0)
+                                repeat = "* * * * "+repeatTimes+" * *";
+                            else
+                                repeat = "* * 1-7 * "+repeatTimes+" 7 *";
+                            break;
+                        case 3:
+                            repeat = "* * * * * * "+repeatTimes;
+                            break;
+                    }
+
+                    int repeatEndType = bundle.getInt("end");
+                    if (repeatEndType == 2)
+                        end_repeat = bundle.getString("dayEnd");
+                    if (repeatEndType == 3){
+                        end_repeat = bundle.getString("times");
+                    }
+                } else
+                {
+                    if (repeatbtn.getText().equals("Каждый день")) {
+                        repeat = "* * 1 * * * *";
+                        end_repeat = "";
+                    }
+
+                    if (repeatbtn.getText().equals("Каждую неделю")) {
+                        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                        Calendar calStart = new GregorianCalendar();
+                        Calendar calEnd = new GregorianCalendar();
+                        try {
+                            calStart.setTime(format.parse(selectedStart));
+                            calEnd.setTime(format.parse(selectdEnd));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        repeat = "* * * 1 * "+ calStart.get(Calendar.DAY_OF_WEEK) +" *";
+                        end_repeat = "";
+                    }
+
+                    if (repeatbtn.getText().equals("Каждый месяц")) {
+                        repeat = "* * * * 1 * *";
+                        end_repeat = "";
+                    }
+
+                    if (repeatbtn.getText().equals("Каждый год")) {
+                        repeat = "* * * * * * 1";
+                        end_repeat = "";
+                    }
+
+                    if (repeatbtn.getText().equals("Не повторяется")) {
+                        repeat = "";
+                        end_repeat = "";
+                    }
+
+                }
+
+                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                Calendar calStart = new GregorianCalendar();
+                Calendar calEnd = new GregorianCalendar();
+                try {
+                    calStart.setTime(format.parse(selectedStart));
+                    calEnd.setTime(format.parse(selectdEnd));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                if (calStart.after(calEnd)) {
+                    Toast.makeText(AddEventActivity.this, "Некорректные дата начала и дата конца события", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    if (nameEvent.getText().toString().replaceAll("[\\s\\d]", "").length() > 0) {
+                        //events[size] = new Event(size, nameEvent.getText().toString(), selectedStart, selectdEnd, descriptionEvent.getText().toString());
+                        //size += 1;
+
+                        mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
+
+                        Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
+                        Bundle bundle = new Bundle();
+                        //bundle.putParcelableArray("events", events);
+                        //bundle.putInt("size", size);
+                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                        Calendar cal = new GregorianCalendar();
+                        try {
+                            cal.setTime(dateFormat.parse(selectedStart));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
+                        bundle.putString("Date", dateFormat.format(cal.getTime()));
+                        dateFormat = new SimpleDateFormat("HH");
+                        bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
+                        intent.putExtras(bundle);
+                        //intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                        startActivity(intent);
+                        overridePendingTransition (R.anim.enter, R.anim.exit);
+                        /*Fragment fragment = new CalendarController();
+                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                        ft.add(R.id.container, fragment);
+                        ft.commit();*/
+                    }
+                    else
+                        Toast.makeText(AddEventActivity.this, "Название события не корректно", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+}

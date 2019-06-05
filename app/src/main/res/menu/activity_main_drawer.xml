@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/calendar"
+            android:title="Мой планнер" />
+        <item
+            android:id="@+id/item2"
+            android:title="що то еще" />
+        <item
+            android:id="@+id/item3"
+            android:title="и еще" />
+    </group>
+
+</menu>
