@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -14,6 +15,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +23,8 @@ import android.widget.Toast;
 import com.example.miplanner.Data.CalendarDbHelper;
 import com.example.miplanner.Event;
 import com.example.miplanner.R;
+
+import org.w3c.dom.Text;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -45,6 +49,8 @@ public class RepeatEventActivity extends AppCompatActivity {
         dateEnding = findViewById(R.id.dateEnding);
         final RadioButton timesEnding = findViewById(R.id.timesEnding);
         final EditText timesCount = findViewById(R.id.timesCount);
+        final TextView endText = findViewById(R.id.textView3);
+        final RelativeLayout lay = findViewById(R.id.lay);
 
         final Bundle bundle = getIntent().getExtras();
         String endDate = bundle.getString("end_date");
@@ -178,6 +184,8 @@ public class RepeatEventActivity extends AppCompatActivity {
             }
         });
 
+        final RelativeLayout.LayoutParams params= new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+
         AdapterView.OnItemSelectedListener itemSelectedListener = new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -185,18 +193,31 @@ public class RepeatEventActivity extends AppCompatActivity {
                     case 0:
                         weekRepeat.setVisibility(View.GONE);
                         monthRepeat.setVisibility(View.GONE);
+                        params.addRule(RelativeLayout.BELOW, R.id.spinner);
+                        endText.setLayoutParams(params);
+                        params.setMargins(68,20,20,0);
+                        endText.setLayoutParams(params);
                         break;
                     case 1:
                         weekRepeat.setVisibility(View.VISIBLE);
                         monthRepeat.setVisibility(View.GONE);
+                        params.addRule(RelativeLayout.BELOW, R.id.week_attr);
+                        params.setMargins(68,20,20,0);
+                        endText.setLayoutParams(params);
                         break;
                     case 2:
                         weekRepeat.setVisibility(View.GONE);
                         monthRepeat.setVisibility(View.VISIBLE);
+                        params.addRule(RelativeLayout.BELOW, R.id.month_attr);
+                        params.setMargins(68,20,20,0);
+                        endText.setLayoutParams(params);
                         break;
                     case 3:
                         weekRepeat.setVisibility(View.GONE);
                         monthRepeat.setVisibility(View.GONE);
+                        params.addRule(RelativeLayout.BELOW, R.id.spinner);
+                        params.setMargins(68,20,20,0);
+                        endText.setLayoutParams(params);
                         break;
                 }
             }
@@ -284,7 +305,7 @@ public class RepeatEventActivity extends AppCompatActivity {
                     intent.putExtra("times", timesCount.getText().toString());
                 }
                 intent.putExtra("rep", "1");
-
+                intent.putExtra("name", bundle.getString("name"));
                 intent.putExtra("start_date", bundle.getString("start_date"));
                 intent.putExtra("start_time", bundle.getString("start_time"));
                 intent.putExtra("end_date", bundle.getString("end_date"));

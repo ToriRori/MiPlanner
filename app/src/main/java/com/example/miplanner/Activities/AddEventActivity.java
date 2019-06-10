@@ -91,24 +91,24 @@ public class AddEventActivity extends AppCompatActivity {
         }
 
         if (startDate != null) {
-            String[] part = startDate.split(".");
-            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1]), Integer.parseInt(part[0]), null);
+            String[] part = startDate.split("\\.");
+            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
         }
 
         if (endDate != null) {
-            String[] part = endDate.split(".");
-            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part[1]), Integer.parseInt(part[0]), null);
+            String[] part = endDate.split("\\.");
+            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
         }
 
         if (startTime != null) {
             String[] part = startTime.split(":");
             tpStart.setHour(Integer.parseInt(part[0]));
-            tpEnd.setMinute(Integer.parseInt(part[1]));
+            tpStart.setMinute(Integer.parseInt(part[1]));
         }
 
         if (endTime != null) {
             String[] part = endTime.split(":");
-            tpStart.setHour(Integer.parseInt(part[0]));
+            tpEnd.setHour(Integer.parseInt(part[0]));
             tpEnd.setMinute(Integer.parseInt(part[1]));
         }
 
@@ -209,7 +209,7 @@ public class AddEventActivity extends AppCompatActivity {
                     }
                 });
 
-                popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
+                popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 1);
             }
         });
 
