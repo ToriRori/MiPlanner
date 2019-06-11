@@ -62,6 +62,7 @@ public class EditEventActivity extends AppCompatActivity {
         tpEnd.setIs24HourView(true);
 
         String date = null, startDate = null, endDate = null, startTime = null, endTime = null, name = null, descr = null, loc = null;
+        long id;
         if(bundle != null) {
             if (bundle.getString("rep") != null)
                 repeatbtn.setText("Другое...");
@@ -75,7 +76,7 @@ public class EditEventActivity extends AppCompatActivity {
         }
 
 
-        Event event = mDbHelper.getEventById((int)itemNumber);
+        final Event event = mDbHelper.getEventById((int)itemNumber);
 
 
         if(name == null) {
@@ -111,15 +112,15 @@ public class EditEventActivity extends AppCompatActivity {
             }
         }
         else {
-            String[] part = startDate.split(".");
-            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1]), Integer.parseInt(part[0]), null);
-            String[] part2 = endDate.split(".");
-            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part2[1]), Integer.parseInt(part2[0]), null);
+            String[] part = startDate.split("\\.");
+            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1 , Integer.parseInt(part[0]), null);
+            String[] part2 = endDate.split("\\.");
+            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part2[1])-1, Integer.parseInt(part2[0]), null);
             String[] part3 = startTime.split(":");
             tpStart.setHour(Integer.parseInt(part3[0]));
-            tpEnd.setMinute(Integer.parseInt(part3[1]));
+            tpStart.setMinute(Integer.parseInt(part3[1]));
             String[] part4 = endTime.split(":");
-            tpStart.setHour(Integer.parseInt(part4[0]));
+            tpEnd.setHour(Integer.parseInt(part4[0]));
             tpEnd.setMinute(Integer.parseInt(part4[1]));
             et.setText(name);
             descEt.setText(descr);
@@ -244,34 +245,38 @@ public class EditEventActivity extends AppCompatActivity {
 
                 if (repeatbtn.getText().equals("Другое...")) {
                     String repeatTimes = bundle.getString("count");
-                    int repeatType = bundle.getInt("type");
+                    if (repeatTimes != null) {
+                        int repeatType = bundle.getInt("type");
 
-                    switch (repeatType) {
-                        case 0:
-                            repeat = "* * "+repeatTimes+" * * * *";
-                            break;
-                        case 1:
-                            String days = bundle.getString("weekChoice");
-                            repeat = "* * * "+repeatTimes+" * "+days+" *";
-                            break;
-                        case 2:
-                            int monthType = bundle.getInt("monthChoice");
-                            if (monthType == 0)
-                                repeat = "* * * * "+repeatTimes+" * *";
-                            else
-                                repeat = "* * 1-7 * "+repeatTimes+" 7 *";
-                            break;
-                        case 3:
-                            repeat = "* * * * * * "+repeatTimes;
-                            break;
-                    }
+                        switch (repeatType) {
+                            case 0:
+                                repeat = "* * " + repeatTimes + " * * * *";
+                                break;
+                            case 1:
+                                String days = bundle.getString("weekChoice");
+                                repeat = "* * * " + repeatTimes + " * " + days + " *";
+                                break;
+                            case 2:
+                                int monthType = bundle.getInt("monthChoice");
+                                if (monthType == 0)
+                                    repeat = "* * * * " + repeatTimes + " * *";
+                                else
+                                    repeat = "* * 1-7 * " + repeatTimes + " 7 *";
+                                break;
+                            case 3:
+                                repeat = "* * * * * * " + repeatTimes;
+                                break;
+                        }
 
-                    int repeatEndType = bundle.getInt("end");
-                    if (repeatEndType == 2)
-                        end_repeat = bundle.getString("dayEnd");
-                    if (repeatEndType == 3){
-                        end_repeat = bundle.getString("times");
+                        int repeatEndType = bundle.getInt("end");
+                        if (repeatEndType == 2)
+                            end_repeat = bundle.getString("dayEnd");
+                        if (repeatEndType == 3) {
+                            end_repeat = bundle.getString("times");
+                        }
                     }
+                    else
+                        repeat = event.getRepeat();
                 } else
                 {
                     if (repeatbtn.getText().equals("Каждый день")) {
@@ -289,7 +294,13 @@ public class EditEventActivity extends AppCompatActivity {
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
-                        repeat = "* * * 1 * "+ calStart.get(Calendar.DAY_OF_WEEK) +" *";
+                        String days = calStart.get(Calendar.DAY_OF_WEEK)-1+"";
+                        calStart.add(Calendar.DAY_OF_YEAR, 1);
+                        while (calStart.before(calEnd)) {
+                            days += ","+(calStart.get(Calendar.DAY_OF_WEEK)-1);
+                            calStart.add(Calendar.DAY_OF_YEAR, 1);
+                        }
+                        repeat = "* * * 1 * "+ days +" *";
                         end_repeat = "";
                     }
 
@@ -307,8 +318,8 @@ public class EditEventActivity extends AppCompatActivity {
                         repeat = "";
                         end_repeat = "";
                     }
-                }
 
+                }
 
 
                 SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");

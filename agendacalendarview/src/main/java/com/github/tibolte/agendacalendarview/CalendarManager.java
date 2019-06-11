@@ -12,6 +12,7 @@ import com.github.tibolte.agendacalendarview.utils.Events;
 import android.content.Context;
 import android.util.Log;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -225,8 +226,27 @@ public class CalendarManager {
                                 int end = 1;
                                 if (event.getEndRepeat().equals(""))
                                     end = 100;
-                                else if ((event.getEndRepeat().split(".")).length == 0)
+                                else if ((event.getEndRepeat().split("\\.")).length == 1)
                                     end = Integer.parseInt(event.getEndRepeat());
+                                else
+                                {
+                                    end = 0;
+                                    Calendar cal1 = new GregorianCalendar();
+                                    Calendar cal2 = new GregorianCalendar();
+                                    cal1.setTime(event.getStartTime().getTime());
+                                    SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                                    try {
+                                        cal2.setTime(format.parse(event.getEndRepeat()));
+                                    }
+                                    catch(ParseException e) {
+                                        e.printStackTrace();
+                                    }
+                                    while (cal1.before(cal2)) {
+                                        end += 1;
+                                        cal1.add(Calendar.DAY_OF_YEAR, Integer.parseInt(edges[0]));
+                                    }
+                                }
+
                                 for (int i = 0; i < end; i++) {
                                     Calendar cal1 = new GregorianCalendar();
                                     Calendar cal2 = new GregorianCalendar();
@@ -294,19 +314,37 @@ public class CalendarManager {
                             }
                         }
                         else if (!parts[3].equals("*")) {
-                            int end = 1;
+                            int end;
                             if (event.getEndRepeat().equals(""))
                                 end = 100;
-                            else if (event.getEndRepeat().split(".").length == 1)
+                            else if (event.getEndRepeat().split("\\.").length == 1)
                                 end = Integer.parseInt(event.getEndRepeat());
+                            else
+                            {
+                                end = 0;
+                                Calendar cal1 = new GregorianCalendar();
+                                Calendar cal2 = new GregorianCalendar();
+                                cal1.setTime(event.getStartTime().getTime());
+                                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                                try {
+                                    cal2.setTime(format.parse(event.getEndRepeat()));
+                                }
+                                catch(ParseException e) {
+                                    e.printStackTrace();
+                                }
+                                while (cal1.before(cal2)) {
+                                    end += 1;
+                                    cal1.add(Calendar.WEEK_OF_YEAR, Integer.parseInt(parts[3]));
+                                }
+                            }
 
                             for (int i = 0; i < end; i++) {
                                 Calendar cal1 = new GregorianCalendar();
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(event.getStartTime().getTime());
                                 cal2.setTime(event.getEndTime().getTime());
-                                cal1.add(Calendar.WEEK_OF_YEAR, i);
-                                cal2.add(Calendar.WEEK_OF_YEAR, i);
+                                cal1.add(Calendar.WEEK_OF_YEAR, i*Integer.parseInt(parts[3]));
+                                cal2.add(Calendar.WEEK_OF_YEAR, i*Integer.parseInt(parts[3]));
                                 String[] days = parts[5].split(",");
                                 boolean flag = false;
                                 for (int j = 0; j < days.length; j++) {
@@ -392,7 +430,31 @@ public class CalendarManager {
                             }
                         }
                         else if (!parts[6].equals("*")) {
-                            for (int i = 0; i < 5; i++) {
+                            int end;
+                            int period = Integer.parseInt(parts[6]);
+                            if (event.getEndRepeat().equals(""))
+                                end = 100;
+                            else if (event.getEndRepeat().split("\\.").length == 1)
+                                end = Integer.parseInt(event.getEndRepeat());
+                            else
+                            {
+                                end = 0;
+                                Calendar cal1 = new GregorianCalendar();
+                                Calendar cal2 = new GregorianCalendar();
+                                cal1.setTime(event.getStartTime().getTime());
+                                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                                try {
+                                    cal2.setTime(format.parse(event.getEndRepeat()));
+                                }
+                                catch(ParseException e) {
+                                    e.printStackTrace();
+                                }
+                                while (cal1.before(cal2)) {
+                                    end += 1;
+                                    cal1.add(Calendar.YEAR, period);
+                                }
+                            }
+                            for (int i = 0; i < end; i++) {
                                 Calendar cal1 = new GregorianCalendar();
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(event.getStartTime().getTime());
@@ -461,8 +523,26 @@ public class CalendarManager {
                             int end = 1;
                             if (event.getEndRepeat().equals(""))
                                 end = 100;
-                            else if (event.getEndRepeat().split(".").length == 1)
+                            else if (event.getEndRepeat().split("\\.").length == 1)
                                 end = Integer.parseInt(event.getEndRepeat());
+                            else
+                            {
+                                end = 0;
+                                Calendar cal1 = new GregorianCalendar();
+                                Calendar cal2 = new GregorianCalendar();
+                                cal1.setTime(event.getStartTime().getTime());
+                                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                                try {
+                                    cal2.setTime(format.parse(event.getEndRepeat()));
+                                }
+                                catch(ParseException e) {
+                                    e.printStackTrace();
+                                }
+                                while (cal1.before(cal2)) {
+                                    end += 1;
+                                    cal1.add(Calendar.YEAR, Integer.parseInt(parts[4]));
+                                }
+                            }
 
                             for (int i = 0; i < end; i++) {
                                 Calendar cal1 = new GregorianCalendar();

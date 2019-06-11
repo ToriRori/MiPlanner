@@ -94,29 +94,6 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                 }
             }
 
-            //Parcelable[] temp = getArguments().getParcelableArray("events");
-            //if (temp != null)
-            //    events = Arrays.copyOf(temp, temp.length, com.example.miplanner.Event[].class);
-            //size = getArguments().getInt("size");
-            /*if ((size != 0) && (events != null)){
-                for (int i = 0; i < size; i += 1){
-                    Calendar calTStart = new GregorianCalendar();
-                    Calendar calTEnd = new GregorianCalendar();
-                    SimpleDateFormat format = new SimpleDateFormat("d.MM.yyyy HH:mm");
-                    try {
-                        calTStart.setTime(format.parse(events[i].getDateStart()));
-                        calTEnd.setTime(format.parse(events[i].getDateEnd()));
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-
-                    format = new SimpleDateFormat("d.MM.yyyy");
-
-                    DrawableCalendarEvent event = new DrawableCalendarEvent(events.length, ContextCompat.getColor(getActivity(), R.color.yellow),
-                            events[i].getName(), events[i].getDescription(), null, calTStart, calTEnd, false, null);
-                    eventList.add(event);
-                }
-            }*/
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
             String[] projection = {
@@ -190,12 +167,6 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getActivity(), AddEventActivity.class);
-                //Bundle bundle = new Bundle();
-                //bundle.putParcelableArray("events", events);
-                //bundle.putInt("size", size);
-                //intent.putExtras(bundle);
-                //intent.putExtra("events", connect);
-                //intent.putExtra("size", sizeEv);
                 startActivity(intent);
                 getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
             }

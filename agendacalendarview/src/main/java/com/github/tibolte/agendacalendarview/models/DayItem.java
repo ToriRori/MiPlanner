@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -147,56 +148,127 @@ public class DayItem implements Parcelable {
                         String[] edges = parts[2].split("-");
                         if (edges.length == 1) {
                             int end = 1;
+                            String temp = events.get(i).getEndRepeat();
                             if (events.get(i).getEndRepeat().equals(""))
                                 end = 100;
-                            else if ((events.get(i).getEndRepeat().split(".")).length == 0)
+                            else if ((events.get(i).getEndRepeat().split("\\.")).length == 1)
                                 end = Integer.parseInt(events.get(i).getEndRepeat());
+                            else
+                            {
+                                end = 0;
+                                Calendar cal1 = new GregorianCalendar();
+                                Calendar cal2 = new GregorianCalendar();
+                                cal1.setTime(events.get(i).getStartTime().getTime());
+                                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                                try {
+                                    cal2.setTime(format.parse(events.get(i).getEndRepeat()));
+                                }
+                                catch(ParseException e) {
+                                    e.printStackTrace();
+                                }
+                                while (cal1.before(cal2)) {
+                                    end += 1;
+                                    cal1.add(Calendar.DAY_OF_YEAR, Integer.parseInt(edges[0]));
+                                }
+                            }
                             for (int j = 0; j < end; j++) {
                                 Calendar cal1 = new GregorianCalendar();
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(events.get(i).getStartTime().getTime());
                                 cal2.setTime(events.get(i).getEndTime().getTime());
-                                cal1.add(Calendar.DAY_OF_MONTH, j * Integer.parseInt(edges[0]));
-                                cal2.add(Calendar.DAY_OF_MONTH, j * Integer.parseInt(edges[0]));
+                                cal1.add(Calendar.DAY_OF_YEAR, j * Integer.parseInt(edges[0]));
+                                cal2.add(Calendar.DAY_OF_YEAR, j * Integer.parseInt(edges[0]));
+                                if (DateHelper.isBetweenInclusive(current, cal1, cal2)) {
+                                    return true;
+                                }
+                            }
+                        }
+                        else {
+                            int end;
+                            int period = Integer.parseInt(parts[4]);
+                            if (events.get(i).getEndRepeat().equals(""))
+                                end = 100;
+                            else if (events.get(i).getEndRepeat().split("\\.").length == 1)
+                                end = Integer.parseInt(events.get(i).getEndRepeat());
+                            else
+                            {
+                                end = 0;
+                                Calendar cal1 = new GregorianCalendar();
+                                Calendar cal2 = new GregorianCalendar();
+                                cal1.setTime(events.get(i).getStartTime().getTime());
+                                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                                try {
+                                    cal2.setTime(format.parse(events.get(i).getEndRepeat()));
+                                }
+                                catch(ParseException e) {
+                                    e.printStackTrace();
+                                }
+                                while (cal1.before(cal2)) {
+                                    end += 1;
+                                    cal1.add(Calendar.YEAR, period);
+                                }
+                            }
+
+                            for (int j = 0; j < end; j++) {
+                                Calendar cal1 = new GregorianCalendar();
+                                Calendar cal2 = new GregorianCalendar();
+                                cal1.setTime(events.get(i).getStartTime().getTime());
+                                cal2.setTime(events.get(i).getEndTime().getTime());
+                                cal1.add(Calendar.MONTH, j * Integer.parseInt(parts[4]));
+                                cal2.add(Calendar.MONTH, j * Integer.parseInt(parts[4]));
+                                cal1.set(Calendar.DAY_OF_MONTH, 1);
+                                cal1.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
+                                cal2.set(Calendar.DAY_OF_MONTH, 1);
+                                cal2.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
                                 if (DateHelper.isBetweenInclusive(current, cal1, cal2)) {
                                     return true;
                                 }
                             }
                         }
                     } else if (!parts[3].equals("*")) {
-                        int end = 1;
+                        int end;
+                        int period = Integer.parseInt(parts[3]);
                         if (events.get(i).getEndRepeat().equals(""))
                             end = 100;
-                        else if (events.get(i).getEndRepeat().split(".").length == 1)
+                        else if (events.get(i).getEndRepeat().split("\\.").length == 1)
                             end = Integer.parseInt(events.get(i).getEndRepeat());
-
+                        else
+                        {
+                            end = 0;
+                            Calendar cal1 = new GregorianCalendar();
+                            Calendar cal2 = new GregorianCalendar();
+                            cal1.setTime(events.get(i).getStartTime().getTime());
+                            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                            try {
+                                cal2.setTime(format.parse(events.get(i).getEndRepeat()));
+                            }
+                            catch(ParseException e) {
+                                e.printStackTrace();
+                            }
+                            while (cal1.before(cal2)) {
+                                end += 1;
+                                cal1.add(Calendar.WEEK_OF_YEAR, period);
+                            }
+                        }
                         for (int j = 0; j < end; j++) {
                             Calendar cal1 = new GregorianCalendar();
                             Calendar cal2 = new GregorianCalendar();
                             cal1.setTime(events.get(i).getStartTime().getTime());
                             cal2.setTime(events.get(i).getEndTime().getTime());
-                            cal1.add(Calendar.WEEK_OF_YEAR, j);
-                            cal2.add(Calendar.WEEK_OF_YEAR, j);
-                            if ((calendar.get(Calendar.DAY_OF_MONTH) == 27)&&(calendar.get(Calendar.MONTH) == 5)){
-                                Log.d("hahha", "ooops!");
-                            }
+                            cal1.add(Calendar.WEEK_OF_YEAR, j*period);
+                            cal2.add(Calendar.WEEK_OF_YEAR, j*period);
+                            int day1 = cal1.get(Calendar.DAY_OF_MONTH);
+                            int day2 = cal2.get(Calendar.DAY_OF_MONTH);
                             String[] days = parts[5].split(",");
                             for (String day : days) {
-                                int day1 = cal1.get(Calendar.DAY_OF_MONTH);
-                                int temp = cal1.getFirstDayOfWeek();
-                                int day2 = cal1.get(Calendar.MONTH);
                                 cal1.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                                day1 = cal1.get(Calendar.DAY_OF_MONTH);
-                                day2 = cal1.get(Calendar.MONTH);
                                 cal1.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day)-1);
                                 day1 = cal1.get(Calendar.DAY_OF_MONTH);
-                                day2 = cal1.get(Calendar.MONTH);
+                                day2 = cal2.get(Calendar.DAY_OF_MONTH);
                                 cal2.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                                day1 = cal2.get(Calendar.DAY_OF_MONTH);
-                                day2 = cal2.get(Calendar.MONTH);
                                 cal2.add(Calendar.DAY_OF_WEEK, Integer.parseInt(day)-1);
-                                day1 = cal2.get(Calendar.DAY_OF_MONTH);
-                                day2 = cal2.get(Calendar.MONTH);
+                                day1 = cal1.get(Calendar.DAY_OF_MONTH);
+                                day2 = cal2.get(Calendar.DAY_OF_MONTH);
                                 if (cal1.before(events.get(i).getStartTime()))
                                     continue;
                                 if (DateHelper.isBetweenInclusive(current, cal1, cal2)) {
@@ -205,7 +277,31 @@ public class DayItem implements Parcelable {
                             }
                         }
                     } else if (!parts[6].equals("*")) {
-                        for (int j = 0; j < 5; j++) {
+                        int end;
+                        int period = Integer.parseInt(parts[6]);
+                        if (events.get(i).getEndRepeat().equals(""))
+                            end = 100;
+                        else if (events.get(i).getEndRepeat().split("\\.").length == 1)
+                            end = Integer.parseInt(events.get(i).getEndRepeat());
+                        else
+                        {
+                            end = 0;
+                            Calendar cal1 = new GregorianCalendar();
+                            Calendar cal2 = new GregorianCalendar();
+                            cal1.setTime(events.get(i).getStartTime().getTime());
+                            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                            try {
+                                cal2.setTime(format.parse(events.get(i).getEndRepeat()));
+                            }
+                            catch(ParseException e) {
+                                e.printStackTrace();
+                            }
+                            while (cal1.before(cal2)) {
+                                end += 1;
+                                cal1.add(Calendar.YEAR, period);
+                            }
+                        }
+                        for (int j = 0; j < end; j++) {
                             Calendar cal1 = new GregorianCalendar();
                             Calendar cal2 = new GregorianCalendar();
                             cal1.setTime(events.get(i).getStartTime().getTime());
@@ -217,11 +313,30 @@ public class DayItem implements Parcelable {
                             }
                         }
                     } else if (!parts[4].equals("*")) {
-                        int end = 1;
+                        int end;
+                        int period = Integer.parseInt(parts[4]);
                         if (events.get(i).getEndRepeat().equals(""))
                             end = 100;
-                        else if (events.get(i).getEndRepeat().split(".").length == 1)
+                        else if (events.get(i).getEndRepeat().split("\\.").length == 1)
                             end = Integer.parseInt(events.get(i).getEndRepeat());
+                        else
+                        {
+                            end = 0;
+                            Calendar cal1 = new GregorianCalendar();
+                            Calendar cal2 = new GregorianCalendar();
+                            cal1.setTime(events.get(i).getStartTime().getTime());
+                            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+                            try {
+                                cal2.setTime(format.parse(events.get(i).getEndRepeat()));
+                            }
+                            catch(ParseException e) {
+                                e.printStackTrace();
+                            }
+                            while (cal1.before(cal2)) {
+                                end += 1;
+                                cal1.add(Calendar.YEAR, period);
+                            }
+                        }
 
                         for (int j = 0; j < end; j++) {
                             Calendar cal1 = new GregorianCalendar();

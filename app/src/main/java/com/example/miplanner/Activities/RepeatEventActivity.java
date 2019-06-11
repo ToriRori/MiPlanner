@@ -207,7 +207,7 @@ public class RepeatEventActivity extends AppCompatActivity {
                         break;
                     case 2:
                         weekRepeat.setVisibility(View.GONE);
-                        monthRepeat.setVisibility(View.VISIBLE);
+                        monthRepeat.setVisibility(View.GONE);
                         params.addRule(RelativeLayout.BELOW, R.id.month_attr);
                         params.setMargins(68,20,20,0);
                         endText.setLayoutParams(params);
@@ -233,7 +233,12 @@ public class RepeatEventActivity extends AppCompatActivity {
         addRepeat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(RepeatEventActivity.this, AddEventActivity.class);
+                String ok = bundle.getString("ok");
+                Intent intent;
+                if (ok != null)
+                    intent = new Intent(RepeatEventActivity.this, EditEventActivity.class);
+                else
+                    intent = new Intent(RepeatEventActivity.this, AddEventActivity.class);
                 if (repeatTimes.getText().equals("")) {
                     Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
                     return;
@@ -313,6 +318,7 @@ public class RepeatEventActivity extends AppCompatActivity {
                 intent.putExtra("time", bundle.getString("time"));
                 intent.putExtra("descr", bundle.getString("descr"));
                 intent.putExtra("loc", bundle.getString("loc"));
+                intent.putExtra("event_id", bundle.getLong("id"));
                 startActivity(intent);
             }
         });
@@ -342,31 +348,31 @@ public class RepeatEventActivity extends AppCompatActivity {
                 String[] days = part[5].split(",");
                 for (String day: days) {
                     switch (day) {
-                        case "0":
+                        case "1":
                             monBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
                             monBtn.setTextColor(getResources().getColor(R.color.white));
                             break;
-                        case "1":
+                        case "2":
                             tueBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
                             tueBtn.setTextColor(getResources().getColor(R.color.white));
                             break;
-                        case "2":
+                        case "3":
                             wedBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
                             wedBtn.setTextColor(getResources().getColor(R.color.white));
                             break;
-                        case "3":
+                        case "4":
                             thuBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
                             thuBtn.setTextColor(getResources().getColor(R.color.white));
                             break;
-                        case "4":
+                        case "5":
                             friBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
                             friBtn.setTextColor(getResources().getColor(R.color.white));
                             break;
-                        case "5":
+                        case "6":
                             satBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
                             satBtn.setTextColor(getResources().getColor(R.color.white));
                             break;
-                        case "6":
+                        case "7":
                             sunBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
                             sunBtn.setTextColor(getResources().getColor(R.color.white));
                             break;
@@ -383,14 +389,17 @@ public class RepeatEventActivity extends AppCompatActivity {
                 ((RadioButton)ending.getChildAt(0)).setChecked(true);
                 neverEnding.setSelected(true);
             }
-            else if (end.split(".").length > 1)
+            else if (end.split("\\.").length > 1)
             {
                 ((RadioButton)ending.getChildAt(1)).setChecked(true);
+                dateEnding.setSelected(true);
                 dateEnding.setText(end);
             }
             else
             {
-                ((RadioButton)ending.getChildAt(2)).setChecked(true);
+                ((RadioButton)ending.getChildAt(3)).setChecked(true);
+                timesEnding.setSelected(true);
+                timesCount.setText(end);
             }
         }
     }
