@@ -207,25 +207,53 @@ public class CalendarManager {
             tmpMonth = mWeekCounter.get(Calendar.MONTH);
             mWeekCounter.add(Calendar.WEEK_OF_YEAR, 1);
         }
+
     }
 
     public void loadEvents(List<CalendarEvent> eventList) {
         /*CalendarLoadTask calendarLoadTask = new CalendarLoadTask();
         calendarLoadTask.execute();*/
-
         for (WeekItem weekItem : getWeeks()) {
             for (DayItem dayItem : weekItem.getDayItems()) {
                 boolean isEventForDay = false;
                 for (CalendarEvent event : eventList) {
+                    /*int count = 0;
+                    if ((event.getStartTime().get(Calendar.YEAR) < mMinCal.get(Calendar.YEAR))&&(event.getRepeat() != null)&&(!event.getRepeat().equals(""))&&(event.getEndRepeat().equals(""))){
+                        Calendar temp = new GregorianCalendar();
+                        temp.setTime(event.getStartTime().getTime());
+                        String[] parts = event.getRepeat().split(" ");
+                        Calendar end = new GregorianCalendar();
+                        end.setTime(mMinCal.getTime());
+                        end.add(Calendar.DAY_OF_YEAR, -7);
+                        while (temp.before(end)){
+                            if (!parts[6].equals("*")) {
+                                temp.add(Calendar.YEAR, Integer.parseInt(parts[6]));
+                                count++;
+                            }
+                            else if (!parts[4].equals("*")) {
+                                temp.add(Calendar.MONTH, Integer.parseInt(parts[4]));
+                                count++;
+                            }
+                            else if (!parts[3].equals("*")) {
+                                temp.add(Calendar.WEEK_OF_YEAR, Integer.parseInt(parts[3]));
+                                count++;
+                            }
+                            else if (!parts[2].equals("*")) {
+                                temp.add(Calendar.DAY_OF_YEAR, Integer.parseInt(parts[2]));
+                                count++;
+                            }
+                        }
+                    }
+
                     String repeat = event.getRepeat();
                     if ((repeat != null)&&(!repeat.equals(""))) {
                         String[] parts = repeat.split(" ");
                         if(!parts[2].equals("*")) {
                             String[] edges = parts[2].split("-");
                             if (edges.length == 1) {
-                                int end = 1;
+                                int end;
                                 if (event.getEndRepeat().equals(""))
-                                    end = 100;
+                                    end = 405/Integer.parseInt(parts[2]);
                                 else if ((event.getEndRepeat().split("\\.")).length == 1)
                                     end = Integer.parseInt(event.getEndRepeat());
                                 else
@@ -252,8 +280,8 @@ public class CalendarManager {
                                     Calendar cal2 = new GregorianCalendar();
                                     cal1.setTime(event.getStartTime().getTime());
                                     cal2.setTime(event.getEndTime().getTime());
-                                    cal1.add(Calendar.DAY_OF_MONTH, i * Integer.parseInt(edges[0]));
-                                    cal2.add(Calendar.DAY_OF_MONTH, i * Integer.parseInt(edges[0]));
+                                    cal1.add(Calendar.DAY_OF_MONTH, count + i * Integer.parseInt(edges[0]));
+                                    cal2.add(Calendar.DAY_OF_MONTH, count + i * Integer.parseInt(edges[0]));
 
                                     if (DateHelper.isBetweenUninclusive(dayItem.getDate(), cal1, cal2)) {
                                         CalendarEvent copy = event.copy();
@@ -316,7 +344,7 @@ public class CalendarManager {
                         else if (!parts[3].equals("*")) {
                             int end;
                             if (event.getEndRepeat().equals(""))
-                                end = 100;
+                                end = 55/Integer.parseInt(parts[3]);
                             else if (event.getEndRepeat().split("\\.").length == 1)
                                 end = Integer.parseInt(event.getEndRepeat());
                             else
@@ -343,8 +371,8 @@ public class CalendarManager {
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(event.getStartTime().getTime());
                                 cal2.setTime(event.getEndTime().getTime());
-                                cal1.add(Calendar.WEEK_OF_YEAR, i*Integer.parseInt(parts[3]));
-                                cal2.add(Calendar.WEEK_OF_YEAR, i*Integer.parseInt(parts[3]));
+                                cal1.add(Calendar.WEEK_OF_YEAR, count + i*Integer.parseInt(parts[3]));
+                                cal2.add(Calendar.WEEK_OF_YEAR, count + i*Integer.parseInt(parts[3]));
                                 String[] days = parts[5].split(",");
                                 boolean flag = false;
                                 for (int j = 0; j < days.length; j++) {
@@ -433,7 +461,7 @@ public class CalendarManager {
                             int end;
                             int period = Integer.parseInt(parts[6]);
                             if (event.getEndRepeat().equals(""))
-                                end = 100;
+                                end = 2;
                             else if (event.getEndRepeat().split("\\.").length == 1)
                                 end = Integer.parseInt(event.getEndRepeat());
                             else
@@ -459,8 +487,8 @@ public class CalendarManager {
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(event.getStartTime().getTime());
                                 cal2.setTime(event.getEndTime().getTime());
-                                cal1.add(Calendar.YEAR, i * Integer.parseInt(parts[6]));
-                                cal2.add(Calendar.YEAR, i * Integer.parseInt(parts[6]));
+                                cal1.add(Calendar.YEAR, count + i * Integer.parseInt(parts[6]));
+                                cal2.add(Calendar.YEAR, count + i * Integer.parseInt(parts[6]));
 
                                 if (DateHelper.isBetweenUninclusive(dayItem.getDate(), cal1, cal2)) {
                                     CalendarEvent copy = event.copy();
@@ -522,7 +550,7 @@ public class CalendarManager {
                         else if (!parts[4].equals("*")) {
                             int end = 1;
                             if (event.getEndRepeat().equals(""))
-                                end = 100;
+                                end = 13/Integer.parseInt(parts[4]);
                             else if (event.getEndRepeat().split("\\.").length == 1)
                                 end = Integer.parseInt(event.getEndRepeat());
                             else
@@ -549,8 +577,8 @@ public class CalendarManager {
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(event.getStartTime().getTime());
                                 cal2.setTime(event.getEndTime().getTime());
-                                cal1.add(Calendar.MONTH, i * Integer.parseInt(parts[4]));
-                                cal2.add(Calendar.MONTH, i * Integer.parseInt(parts[4]));
+                                cal1.add(Calendar.MONTH, count + i * Integer.parseInt(parts[4]));
+                                cal2.add(Calendar.MONTH, count + i * Integer.parseInt(parts[4]));
 
                                 if (DateHelper.isBetweenUninclusive(dayItem.getDate(), cal1, cal2)) {
                                     CalendarEvent copy = event.copy();
@@ -610,7 +638,7 @@ public class CalendarManager {
                             }
                         }
                     }
-                    else {
+                    else {*/
                         if (DateHelper.isBetweenUninclusive(dayItem.getDate(), event.getStartTime(), event.getEndTime())) {
                             CalendarEvent copy = event.copy();
                             copy.setAllDay(true);
@@ -667,7 +695,7 @@ public class CalendarManager {
                             isEventForDay = true;
 
                         }
-                    }
+                    //}
                 }
                 if (!isEventForDay) {
                     Calendar dayInstance = Calendar.getInstance();

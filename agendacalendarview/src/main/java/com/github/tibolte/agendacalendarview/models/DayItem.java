@@ -135,14 +135,41 @@ public class DayItem implements Parcelable {
         for(int i=0;i<events.size();i++) {
             Date current = calendar.getTime();
 
+            /*int count = 0;
+            if ((events.get(i).getStartTime().get(Calendar.YEAR) < calendar.get(Calendar.YEAR))&&(events.get(i).getRepeat() != null)&&(!events.get(i).getRepeat().equals(""))&&(events.get(i).getEndRepeat().equals(""))){
+                Calendar temp = new GregorianCalendar();
+                temp.setTime(events.get(i).getStartTime().getTime());
+                String[] parts = events.get(i).getRepeat().split(" ");
+                while (temp.get(Calendar.YEAR) < calendar.get(Calendar.YEAR)){
+                    if (!parts[6].equals("*")) {
+                        temp.add(Calendar.YEAR, Integer.parseInt(parts[6]));
+                        count++;
+                    }
+                    else if (!parts[4].equals("*")) {
+                        temp.add(Calendar.MONTH, Integer.parseInt(parts[4]));
+                        count++;
+                    }
+                    else if (!parts[3].equals("*")) {
+                        temp.add(Calendar.WEEK_OF_YEAR, Integer.parseInt(parts[3]));
+                        count++;
+                    }
+                    else if (!parts[2].equals("*")) {
+                        temp.add(Calendar.DAY_OF_YEAR, Integer.parseInt(parts[2]));
+                        count++;
+                    }
+                }
+
+            }*/
+
+
             Calendar StartDate = events.get(i).getStartTime();
             Calendar EndDate = events.get(i).getEndTime();
-            if ((events.get(i).getRepeat() == null) || events.get(i).getRepeat().equals("")) {
+           // if ((events.get(i).getRepeat() == null) || events.get(i).getRepeat().equals("")) {
                 if (DateHelper.isBetweenInclusive(current, StartDate, EndDate)) {
                     return true;
                 }
-            }
-            else {
+            //}
+            /*else {
                     String[] parts = events.get(i).getRepeat().split(" ");
                     if (!parts[2].equals("*")) {
                         String[] edges = parts[2].split("-");
@@ -150,7 +177,7 @@ public class DayItem implements Parcelable {
                             int end = 1;
                             String temp = events.get(i).getEndRepeat();
                             if (events.get(i).getEndRepeat().equals(""))
-                                end = 100;
+                                end = 405/Integer.parseInt(parts[2]);
                             else if ((events.get(i).getEndRepeat().split("\\.")).length == 1)
                                 end = Integer.parseInt(events.get(i).getEndRepeat());
                             else
@@ -176,8 +203,8 @@ public class DayItem implements Parcelable {
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(events.get(i).getStartTime().getTime());
                                 cal2.setTime(events.get(i).getEndTime().getTime());
-                                cal1.add(Calendar.DAY_OF_YEAR, j * Integer.parseInt(edges[0]));
-                                cal2.add(Calendar.DAY_OF_YEAR, j * Integer.parseInt(edges[0]));
+                                cal1.add(Calendar.DAY_OF_YEAR, count + j * Integer.parseInt(edges[0]));
+                                cal2.add(Calendar.DAY_OF_YEAR, count + j * Integer.parseInt(edges[0]));
                                 if (DateHelper.isBetweenInclusive(current, cal1, cal2)) {
                                     return true;
                                 }
@@ -187,7 +214,7 @@ public class DayItem implements Parcelable {
                             int end;
                             int period = Integer.parseInt(parts[4]);
                             if (events.get(i).getEndRepeat().equals(""))
-                                end = 100;
+                                end = 15/Integer.parseInt(parts[4]);
                             else if (events.get(i).getEndRepeat().split("\\.").length == 1)
                                 end = Integer.parseInt(events.get(i).getEndRepeat());
                             else
@@ -214,8 +241,8 @@ public class DayItem implements Parcelable {
                                 Calendar cal2 = new GregorianCalendar();
                                 cal1.setTime(events.get(i).getStartTime().getTime());
                                 cal2.setTime(events.get(i).getEndTime().getTime());
-                                cal1.add(Calendar.MONTH, j * Integer.parseInt(parts[4]));
-                                cal2.add(Calendar.MONTH, j * Integer.parseInt(parts[4]));
+                                cal1.add(Calendar.MONTH, count + j * Integer.parseInt(parts[4]));
+                                cal2.add(Calendar.MONTH, count + j * Integer.parseInt(parts[4]));
                                 cal1.set(Calendar.DAY_OF_MONTH, 1);
                                 cal1.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
                                 cal2.set(Calendar.DAY_OF_MONTH, 1);
@@ -229,7 +256,7 @@ public class DayItem implements Parcelable {
                         int end;
                         int period = Integer.parseInt(parts[3]);
                         if (events.get(i).getEndRepeat().equals(""))
-                            end = 100;
+                            end = 55/Integer.parseInt(parts[3]);
                         else if (events.get(i).getEndRepeat().split("\\.").length == 1)
                             end = Integer.parseInt(events.get(i).getEndRepeat());
                         else
@@ -255,8 +282,8 @@ public class DayItem implements Parcelable {
                             Calendar cal2 = new GregorianCalendar();
                             cal1.setTime(events.get(i).getStartTime().getTime());
                             cal2.setTime(events.get(i).getEndTime().getTime());
-                            cal1.add(Calendar.WEEK_OF_YEAR, j*period);
-                            cal2.add(Calendar.WEEK_OF_YEAR, j*period);
+                            cal1.add(Calendar.WEEK_OF_YEAR, count + j*period);
+                            cal2.add(Calendar.WEEK_OF_YEAR, count + j*period);
                             int day1 = cal1.get(Calendar.DAY_OF_MONTH);
                             int day2 = cal2.get(Calendar.DAY_OF_MONTH);
                             String[] days = parts[5].split(",");
@@ -280,7 +307,7 @@ public class DayItem implements Parcelable {
                         int end;
                         int period = Integer.parseInt(parts[6]);
                         if (events.get(i).getEndRepeat().equals(""))
-                            end = 100;
+                            end = 2;
                         else if (events.get(i).getEndRepeat().split("\\.").length == 1)
                             end = Integer.parseInt(events.get(i).getEndRepeat());
                         else
@@ -306,8 +333,8 @@ public class DayItem implements Parcelable {
                             Calendar cal2 = new GregorianCalendar();
                             cal1.setTime(events.get(i).getStartTime().getTime());
                             cal2.setTime(events.get(i).getEndTime().getTime());
-                            cal1.add(Calendar.YEAR, j * Integer.parseInt(parts[6]));
-                            cal2.add(Calendar.YEAR, j * Integer.parseInt(parts[6]));
+                            cal1.add(Calendar.YEAR, count + j * Integer.parseInt(parts[6]));
+                            cal2.add(Calendar.YEAR, count + j * Integer.parseInt(parts[6]));
                             if (DateHelper.isBetweenInclusive(current, cal1, cal2)) {
                                 return true;
                             }
@@ -316,7 +343,7 @@ public class DayItem implements Parcelable {
                         int end;
                         int period = Integer.parseInt(parts[4]);
                         if (events.get(i).getEndRepeat().equals(""))
-                            end = 100;
+                            end = 15/Integer.parseInt(parts[4]);
                         else if (events.get(i).getEndRepeat().split("\\.").length == 1)
                             end = Integer.parseInt(events.get(i).getEndRepeat());
                         else
@@ -350,7 +377,7 @@ public class DayItem implements Parcelable {
                             }
                         }
                     }
-                }
+                }*/
         }
         return false;
     }

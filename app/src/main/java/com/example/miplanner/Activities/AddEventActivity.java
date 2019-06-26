@@ -1,11 +1,7 @@
 package com.example.miplanner.Activities;
 
 import android.content.Intent;
-import android.media.tv.TvContract;
 import android.os.Bundle;
-import android.os.Parcelable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -20,10 +16,12 @@ import android.widget.Toast;
 
 import com.example.miplanner.Data.CalendarDbHelper;
 import com.example.miplanner.Event;
-import com.example.miplanner.Fragments.Calendar.CalendarController;
+import com.example.miplanner.POJO.DatumEvents;
+import com.example.miplanner.POJO.DatumPatterns;
+import com.example.miplanner.POJO.Events;
+import com.example.miplanner.POJO.Patterns;
 import com.example.miplanner.R;
-import com.example.miplanner.Event;
-import com.example.miplanner.R;
+import com.example.miplanner.RetrofitClient;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -31,11 +29,14 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 
 public class AddEventActivity extends AppCompatActivity {
-
-    Event[] events;
-    int size;
 
     private CalendarDbHelper mDbHelper;
 
@@ -228,8 +229,8 @@ public class AddEventActivity extends AppCompatActivity {
                 descriptionEvent.clearFocus();
                 locationText.clearFocus();
 
-                String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear()+" "+tpStart.getHour()+":"+tpStart.getMinute();
-                String selectdEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+tpEnd.getHour()+":"+tpEnd.getMinute();
+                final String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear()+" "+tpStart.getHour()+":"+tpStart.getMinute();
+                final String selectdEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+tpEnd.getHour()+":"+tpEnd.getMinute();
 
                 String repeat = "";
                 String end_repeat = "";
@@ -359,15 +360,125 @@ public class AddEventActivity extends AppCompatActivity {
                         temp.setTime(calStart.getTime());
                     }
                 }
-
+                final String mRepeat = repeat;
+                final String mEnd = end_repeat;
 
                 if (nameEvent.getText().toString().replaceAll("[\\s\\d]", "").length() > 0) {
-                    //events[size] = new Event(size, nameEvent.getText().toString(), selectedStart, selectdEnd, descriptionEvent.getText().toString());
-                    //size += 1;
 
-                    mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
+                    //mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
+                    final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+                    DatumEvents datEv = new DatumEvents(descriptionEvent.getText().toString(), locationText.getText().toString(), nameEvent.getText().toString(), "");
+                    retrofitClient.getEventRepository().save(datEv).enqueue(new Callback<Events>() {
+                        @Override
+                        public void onResponse(Call<Events> call, Response<Events> response) {
+                            List<DatumEvents> event = Arrays.asList(response.body().getData());
+                            Calendar calStart = new GregorianCalendar();
+                            Calendar calEnd = new GregorianCalendar();
+                            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                            try {
+                                calStart.setTime(format.parse(selectedStart));
+                                calEnd.setTime(format.parse(selectdEnd));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            String rule = "";
+                            if (mRepeat.equals(""))
+                                rule += "FREQ=DAILY;INTERVAL=7;COUNT=1;";
+                            else {
+                                String[] parts = mRepeat.split(" ");
+                                if (!parts[2].equals("*"))
+                                    rule += "FREQ=DAILY;INTERVAL=" + parts[2] + ";";
+                                else if (!parts[3].equals("*")) {
+                                    rule += "FREQ=WEEKLY;INTERVAL=" + parts[3] + ";";
+                                    String[] days = parts[5].split(",");
+                                    rule += "BYDAY=";
+                                    String byday = "";
+                                    for (String day : days) {
+                                        if (day.equals("1"))
+                                            if (byday.equals(""))
+                                                byday = "MO";
+                                            else
+                                                byday = ",MO";
+                                        if (day.equals("2"))
+                                            if (byday.equals(""))
+                                                byday = "TU";
+                                            else
+                                                byday = ",TU";
+                                        if (day.equals("3"))
+                                            if (byday.equals(""))
+                                                byday = "WE";
+                                            else
+                                                byday = ",WE";
+                                        if (day.equals("4"))
+                                            if (byday.equals(""))
+                                                byday = "TH";
+                                            else
+                                                byday = ",TH";
+                                        if (day.equals("5"))
+                                            if (byday.equals(""))
+                                                byday = "FR";
+                                            else
+                                                byday = ",FR";
+                                        if (day.equals("6"))
+                                            if (byday.equals(""))
+                                                byday = "SA";
+                                            else
+                                                byday = ",SA";
+                                        if (day.equals("7"))
+                                            if (byday.equals(""))
+                                                byday = "SU";
+                                            else
+                                                byday = ",SU";
 
-                    Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
+                                    }
+                                    rule += byday + ";";
+                                }
+                                if (!mEnd.equals("")) {
+                                    String[] date = mEnd.split(".");
+                                    if (date.length > 1)
+                                        rule += "UNTIL=" + date[2] + date[1] + date[0] + "T000000Z;";
+                                    else
+                                        rule += "COUNT=" + mEnd + ";";
+                                }
+                            }
+                            DatumPatterns datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", rule,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                            retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP).enqueue(new Callback<Patterns>() {
+                                @Override
+                                public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                                    Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
+                                    Bundle bundle = new Bundle();
+
+                                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                                    Calendar cal = new GregorianCalendar();
+                                    try {
+                                        cal.setTime(dateFormat.parse(selectedStart));
+                                    } catch (ParseException e) {
+                                        e.printStackTrace();
+                                    }
+                                    dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
+                                    bundle.putString("Date", dateFormat.format(cal.getTime()));
+                                    dateFormat = new SimpleDateFormat("HH");
+                                    bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
+                                    intent.putExtras(bundle);
+
+                                    startActivity(intent);
+                                    overridePendingTransition (R.anim.enter, R.anim.exit);
+                                }
+
+                                @Override
+                                public void onFailure(Call<Patterns> call, Throwable t) {
+
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Call<Events> call, Throwable t) {
+
+                        }
+                    });
+
+                    /*Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
                     Bundle bundle = new Bundle();
 
                     DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
@@ -385,7 +496,7 @@ public class AddEventActivity extends AppCompatActivity {
 
                     startActivity(intent);
                     overridePendingTransition (R.anim.enter, R.anim.exit);
-
+                    */
                 }
                 else
                     Toast.makeText(AddEventActivity.this, "Название события не корректно", Toast.LENGTH_SHORT).show();

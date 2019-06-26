@@ -17,11 +17,11 @@ public class DrawableEventRenderer extends EventRenderer<DrawableCalendarEvent> 
 
     @Override
     public void render(View view, DrawableCalendarEvent event) {
-        TextView txtTitle = (TextView) view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_title);
-        TextView txtLocation = (TextView) view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_location);
-        TextView txtTime = (TextView) view.findViewById(R.id.view_agenda_event_time);
-        LinearLayout descriptionContainer = (LinearLayout) view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_description_container);
-        LinearLayout locationContainer = (LinearLayout) view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_location_container);
+        TextView txtTitle = view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_title);
+        TextView txtLocation = view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_location);
+        TextView txtTime = view.findViewById(R.id.view_agenda_event_time);
+        LinearLayout descriptionContainer = view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_description_container);
+        LinearLayout locationContainer = view.findViewById(com.github.tibolte.agendacalendarview.R.id.view_agenda_event_location_container);
         //ImageView locationImage = (ImageView) view.findViewById(R.id.image_location);
         descriptionContainer.setVisibility(View.VISIBLE);
 

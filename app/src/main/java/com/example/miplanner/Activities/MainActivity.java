@@ -23,6 +23,7 @@ import com.example.miplanner.Event;
 import com.example.miplanner.Fragments.Calendar.CalendarController;
 import com.example.miplanner.Fragments.Calendar.DrawableCalendarEvent;
 import com.example.miplanner.R;
+import com.github.tibolte.agendacalendarview.models.DayItem;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -48,13 +49,11 @@ public class MainActivity extends AppCompatActivity
         Bundle bundle = getIntent().getExtras();
         if (bundle != null) {
             Parcelable[] temp = bundle.getParcelableArray("events");
-            //connect = Arrays.copyOf(temp, temp.length, com.example.miplanner.Event[].class);
-            //sizeEv = (int) bundle.getInt("size", 0);
             if (bundle.getString("Date") != null)
                 getDay(bundle);
         }
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         mDbHelper = new CalendarDbHelper(this);
@@ -65,8 +64,6 @@ public class MainActivity extends AppCompatActivity
             startTime1.set(Calendar.HOUR_OF_DAY, 11);
             endTime1.set(Calendar.HOUR_OF_DAY, 11);
             SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            //connect[sizeEv] = new Event(sizeEv+1, "Поход на Тобизина", format.format(startTime1.getTime()), format.format(endTime1.getTime()), "Незабываемое приключение!");
-            //sizeEv += 1;
             mDbHelper.insertEvent("Поход на Тобизина", "Незабываемое приключение!", "м. Тобизина", "", format.format(startTime1.getTime()), format.format(endTime1.getTime()));
 
             Calendar startTime2 = Calendar.getInstance();
@@ -75,8 +72,6 @@ public class MainActivity extends AppCompatActivity
             endTime2.add(Calendar.DAY_OF_YEAR, 1);
             startTime2.set(Calendar.HOUR_OF_DAY, 8);
             endTime2.set(Calendar.HOUR_OF_DAY, 18);
-            //connect[sizeEv] = new Event(sizeEv+1, "Поездка в Арсеньев", format.format(startTime2.getTime()), format.format(endTime2.getTime()), "Красивый маленький город");
-            //sizeEv += 1;
             mDbHelper.insertEvent("Поездка в Арсеньев", "Красивый маленький город", "Арсеньев", "", format.format(startTime2.getTime()), format.format(endTime2.getTime()));
 
             Calendar startTime3 = Calendar.getInstance();
@@ -85,8 +80,6 @@ public class MainActivity extends AppCompatActivity
             startTime3.set(Calendar.MINUTE, 0);
             endTime3.set(Calendar.HOUR_OF_DAY, 15);
             endTime3.set(Calendar.MINUTE, 0);
-            //connect[sizeEv] = new Event(sizeEv+1, "Встреча с Настей", format.format(startTime3.getTime()), format.format(endTime3.getTime()), "Лучшая подруга");
-            //sizeEv += 1;
             mDbHelper.insertEvent("Встреча с Настей", "Лучшая подруга", "Арсеньев", "* * 3 * * * *", "7", format.format(startTime3.getTime()), format.format(endTime3.getTime()));
         }
 
@@ -94,7 +87,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -104,7 +97,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         switch (item.getItemId()) {
             case android.R.id.home:
                 drawer.openDrawer(GravityCompat.START);
@@ -140,7 +133,7 @@ public class MainActivity extends AppCompatActivity
         bundle.putInt("size", sizeEv);
         fragment.setArguments(bundle);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
 
         FragmentTransaction fragmentManager = getSupportFragmentManager().beginTransaction();

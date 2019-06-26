@@ -187,7 +187,7 @@ public class CalendarDbHelper extends SQLiteOpenHelper {
                 null,                  // Don't filter by row groups
                 null);                   // порядок сортировки
 
-        if  (cursor.moveToNext()) { return false; } else { return true; }
+        return !cursor.moveToNext();
     }
 
     public Event getEventById(int id) {

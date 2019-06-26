@@ -326,80 +326,74 @@ public class RepeatEventActivity extends AppCompatActivity {
         String ok = bundle.getString("ok");
         if (ok != null) {
             long id = bundle.getLong("id");
-            CalendarDbHelper mDbHelper = new CalendarDbHelper(this);
-            Event event = mDbHelper.getEventById((int)id);
-            String rep = event.getRepeat();
-            String[] part = rep.split(" ");
-            if (!part[6].equals("*")) {
-                repeatTimes.setText(part[6]);
-                repeatType.setSelection(3);
-            }
-            else if (!part[4].equals("*")) {
-                repeatTimes.setText(part[4]);
-                repeatType.setSelection(2);
-                if (part[3].split("-").length > 1)
-                    monthSpinner.setSelection(1);
-                else
-                    monthSpinner.setSelection(0);
-            }
-            else if (!part[3].equals("*")) {
-                repeatTimes.setText(part[3]);
-                repeatType.setSelection(1);
-                String[] days = part[5].split(",");
-                for (String day: days) {
-                    switch (day) {
-                        case "1":
-                            monBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                            monBtn.setTextColor(getResources().getColor(R.color.white));
-                            break;
-                        case "2":
-                            tueBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                            tueBtn.setTextColor(getResources().getColor(R.color.white));
-                            break;
-                        case "3":
-                            wedBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                            wedBtn.setTextColor(getResources().getColor(R.color.white));
-                            break;
-                        case "4":
-                            thuBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                            thuBtn.setTextColor(getResources().getColor(R.color.white));
-                            break;
-                        case "5":
-                            friBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                            friBtn.setTextColor(getResources().getColor(R.color.white));
-                            break;
-                        case "6":
-                            satBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                            satBtn.setTextColor(getResources().getColor(R.color.white));
-                            break;
-                        case "7":
-                            sunBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                            sunBtn.setTextColor(getResources().getColor(R.color.white));
-                            break;
+            //CalendarDbHelper mDbHelper = new CalendarDbHelper(this);
+            //Event event = mDbHelper.getEventById((int)id);
+            String rep = bundle.getString("rep");
+            if (!rep.equals("")) {
+                String[] part = rep.split(" ");
+                if (!part[6].equals("*")) {
+                    repeatTimes.setText(part[6]);
+                    repeatType.setSelection(3);
+                } else if (!part[4].equals("*")) {
+                    repeatTimes.setText(part[4]);
+                    repeatType.setSelection(2);
+                    if (part[3].split("-").length > 1)
+                        monthSpinner.setSelection(1);
+                    else
+                        monthSpinner.setSelection(0);
+                } else if (!part[3].equals("*")) {
+                    repeatTimes.setText(part[3]);
+                    repeatType.setSelection(1);
+                    String[] days = part[5].split(",");
+                    for (String day : days) {
+                        switch (day) {
+                            case "1":
+                                monBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                monBtn.setTextColor(getResources().getColor(R.color.white));
+                                break;
+                            case "2":
+                                tueBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                tueBtn.setTextColor(getResources().getColor(R.color.white));
+                                break;
+                            case "3":
+                                wedBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                wedBtn.setTextColor(getResources().getColor(R.color.white));
+                                break;
+                            case "4":
+                                thuBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                thuBtn.setTextColor(getResources().getColor(R.color.white));
+                                break;
+                            case "5":
+                                friBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                friBtn.setTextColor(getResources().getColor(R.color.white));
+                                break;
+                            case "6":
+                                satBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                satBtn.setTextColor(getResources().getColor(R.color.white));
+                                break;
+                            case "7":
+                                sunBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                sunBtn.setTextColor(getResources().getColor(R.color.white));
+                                break;
+                        }
                     }
+                } else if (!part[2].equals("*")) {
+                    repeatTimes.setText(part[2]);
+                    repeatType.setSelection(0);
                 }
-            }
-            else if (!part[2].equals("*")) {
-                repeatTimes.setText(part[2]);
-                repeatType.setSelection(0);
-            }
-            String end = event.getEndRepeat();
-            if (end.equals(""))
-            {
-                ((RadioButton)ending.getChildAt(0)).setChecked(true);
-                neverEnding.setSelected(true);
-            }
-            else if (end.split("\\.").length > 1)
-            {
-                ((RadioButton)ending.getChildAt(1)).setChecked(true);
-                dateEnding.setSelected(true);
-                dateEnding.setText(end);
-            }
-            else
-            {
-                ((RadioButton)ending.getChildAt(3)).setChecked(true);
-                timesEnding.setSelected(true);
-                timesCount.setText(end);
+                String end = bundle.getString("end_rep");
+                if (end.equals("")) {
+                    ((RadioButton) ending.getChildAt(0)).setChecked(true);
+                    neverEnding.setSelected(true);
+                } else if (end.split("\\.").length > 1) {
+                    ((RadioButton) ending.getChildAt(1)).setChecked(true);
+                    dateEnding.setSelected(true);
+                    dateEnding.setText(end);
+                } else {
+                    ((RadioButton) ending.getChildAt(3)).setChecked(true);
+                    timesEnding.setSelected(true);
+                    timesCount.setText(end);
+                }
             }
         }
     }

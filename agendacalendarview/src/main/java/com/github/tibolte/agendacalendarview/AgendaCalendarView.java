@@ -4,6 +4,7 @@ import com.github.tibolte.agendacalendarview.agenda.AgendaAdapter;
 import com.github.tibolte.agendacalendarview.agenda.AgendaView;
 import com.github.tibolte.agendacalendarview.calendar.CalendarView;
 import com.github.tibolte.agendacalendarview.models.CalendarEvent;
+import com.github.tibolte.agendacalendarview.models.DayItem;
 import com.github.tibolte.agendacalendarview.render.DefaultEventRenderer;
 import com.github.tibolte.agendacalendarview.render.EventRenderer;
 import com.github.tibolte.agendacalendarview.utils.BusProvider;
@@ -187,6 +188,10 @@ public class AgendaCalendarView extends FrameLayout implements StickyListHeaders
                 mCalendarPickerController.onScrollToDate(event.getInstanceDay());
             }
         }
+    }
+
+    public DayItem getSelectedDay() {
+        return mCalendarView.getSelectedDay();
     }
 
     // endregion

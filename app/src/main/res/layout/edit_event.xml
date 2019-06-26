@@ -151,6 +151,14 @@
                 android:textColor="@color/blue_dark"
                 android:shadowColor="@color/calendar_text_current_day"/>
 
+            <TextView
+                android:id="@+id/textView11"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/locationText"
+                android:text="Повторение"
+                android:textColor="@color/blue_dark"/>
+
 
             <Button
                 android:id="@+id/buttonRepeat"

@@ -7,7 +7,7 @@ import com.example.miplanner.Event;
 public final class Events {
 
     private Events() {
-    };
+    }
 
     public static final class EventAdd implements BaseColumns {
         public final static String TABLE_NAME = "EventsTable";

@@ -2,7 +2,6 @@ package com.example.miplanner.Activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -17,9 +16,12 @@ import android.widget.Toast;
 
 import com.example.miplanner.Data.CalendarDbHelper;
 import com.example.miplanner.Event;
+import com.example.miplanner.POJO.DatumEvents;
+import com.example.miplanner.POJO.DatumPatterns;
+import com.example.miplanner.POJO.Events;
+import com.example.miplanner.POJO.Patterns;
 import com.example.miplanner.R;
-import com.example.miplanner.Event;
-import com.example.miplanner.R;
+import com.example.miplanner.RetrofitClient;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -27,27 +29,24 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import scala.util.parsing.combinator.testing.Str;
 
 public class EditEventActivity extends AppCompatActivity {
 
-    Event[] events;
-    int size;
     private CalendarDbHelper mDbHelper;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.edit_event);
-        Button addBtn = findViewById(R.id.buttonAddEvent);
 
-        mDbHelper = new CalendarDbHelper(this);
-
-        final Bundle bundle = getIntent().getExtras();
-        //Parcelable[] temp = bundle.getParcelableArray("events");
-        //events = Arrays.copyOf(temp, temp.length, Event[].class);
-        //size = bundle.getInt("size", 0);
-        final long itemNumber  = bundle.getLong("event_id");
         final TimePicker tpStart = findViewById(R.id.timePickerStart);
         final DatePicker dpStart = findViewById(R.id.datePickerStart);
         final TimePicker tpEnd = findViewById(R.id.timePickerEnd);
@@ -56,76 +55,95 @@ public class EditEventActivity extends AppCompatActivity {
         final EditText descEt = findViewById(R.id.descriptionText);
         final EditText locEt = findViewById(R.id.locationText);
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
+        final Button addBtn = findViewById(R.id.buttonAddEvent);
 
+
+        final Bundle bundle = getIntent().getExtras();
+        final long itemNumber  = bundle.getLong("event_id");
+
+        final String date = bundle.getString("day");
+        final String rep = bundle.getString("rep");
+        final String   startDate = bundle.getString("start_date");
+        final String endDate = bundle.getString("end_date");
+        final String startTime = bundle.getString("start_time");
+        final String endTime = bundle.getString("end_time");
+        final String name = bundle.getString("name");
+        final String descr = bundle.getString("descr");
+        final String loc = bundle.getString("loc");
+        final String end_rep = bundle.getString("end_rep");
+
+
+        if (date != null) {
+            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+            Calendar cal = new GregorianCalendar();
+            try {
+                cal.setTime(format.parse(date));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            dpStart.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), null);
+            dpEnd.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), null);
+            tpStart.setHour(0);
+            tpStart.setMinute(0);
+            tpEnd.setHour(0);
+            tpEnd.setMinute(0);
+        }
+
+        if (startDate != null) {
+            String[] part = startDate.split("\\.");
+            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
+        }
+
+        if (endDate != null) {
+            String[] part = endDate.split("\\.");
+            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
+        }
+
+        if (startTime != null) {
+            String[] part = startTime.split(":");
+            tpStart.setHour(Integer.parseInt(part[0]));
+            tpStart.setMinute(Integer.parseInt(part[1]));
+        }
+
+        if (endTime != null) {
+            String[] part = endTime.split(":");
+            tpEnd.setHour(Integer.parseInt(part[0]));
+            tpEnd.setMinute(Integer.parseInt(part[1]));
+        }
+
+        if (name != null) {
+            et.setText(name);
+        }
+
+        if (descr != null) {
+            descEt.setText(descr);
+        }
+
+        if (loc != null) {
+            locEt.setText(loc);
+        }
+
+        if (rep != null) {
+            if (rep.equals("* * 1 * * * *"))
+                repeatbtn.setText("Каждый день");
+            else if (rep.equals("* * * 1 * * *"))
+                repeatbtn.setText("Каждую неделю");
+            else if (rep.equals("* * * * 1 * *"))
+                repeatbtn.setText("Каждый месяц");
+            else if (rep.equals("* * * * * * 1"))
+                repeatbtn.setText("Каждый год");
+            else
+                repeatbtn.setText("Другое...");
+        }
+
+
+        mDbHelper = new CalendarDbHelper(this);
 
         tpStart.setIs24HourView(true);
         tpEnd.setIs24HourView(true);
 
-        String date = null, startDate = null, endDate = null, startTime = null, endTime = null, name = null, descr = null, loc = null;
-        long id;
-        if(bundle != null) {
-            if (bundle.getString("rep") != null)
-                repeatbtn.setText("Другое...");
-            startDate = bundle.getString("start_date");
-            endDate = bundle.getString("end_date");
-            startTime = bundle.getString("start_time");
-            endTime = bundle.getString("end_time");
-            name = bundle.getString("name");
-            descr = bundle.getString("descr");
-            loc = bundle.getString("loc");
-        }
+        //final Event event = mDbHelper.getEventById((int)itemNumber);
 
-
-        final Event event = mDbHelper.getEventById((int)itemNumber);
-
-
-        if(name == null) {
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            Calendar calStart = new GregorianCalendar();
-            Calendar calEnd = new GregorianCalendar();
-            try {
-                calStart.setTime(format.parse(event.getDateStart()));
-                calEnd.setTime(format.parse(event.getDateEnd()));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            dpStart.init(calStart.get(Calendar.YEAR), calStart.get(Calendar.MONTH), calStart.get(Calendar.DAY_OF_MONTH), null);
-            dpEnd.init(calEnd.get(Calendar.YEAR), calEnd.get(Calendar.MONTH), calEnd.get(Calendar.DAY_OF_MONTH), null);
-            tpStart.setHour(calStart.get(Calendar.HOUR_OF_DAY));
-            tpStart.setMinute(calStart.get(Calendar.MINUTE));
-            tpEnd.setHour(calEnd.get(Calendar.HOUR_OF_DAY));
-            tpEnd.setMinute(calEnd.get(Calendar.MINUTE));
-            et.setText(event.getName());
-            descEt.setText(event.getDescription());
-            locEt.setText(event.getLocation());
-            if (!event.getRepeat().equals("")) {
-                if (event.getRepeat().equals("* * 1 * * * *"))
-                    repeatbtn.setText("Каждый день");
-                else if (event.getRepeat().equals("* * * 1 * * *"))
-                    repeatbtn.setText("Каждую неделю");
-                else if (event.getRepeat().equals("* * * * 1 * *"))
-                    repeatbtn.setText("Каждый месяц");
-                else if (event.getRepeat().equals("* * * * * * 1"))
-                    repeatbtn.setText("Каждый год");
-                else
-                    repeatbtn.setText("Другое...");
-            }
-        }
-        else {
-            String[] part = startDate.split("\\.");
-            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1 , Integer.parseInt(part[0]), null);
-            String[] part2 = endDate.split("\\.");
-            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part2[1])-1, Integer.parseInt(part2[0]), null);
-            String[] part3 = startTime.split(":");
-            tpStart.setHour(Integer.parseInt(part3[0]));
-            tpStart.setMinute(Integer.parseInt(part3[1]));
-            String[] part4 = endTime.split(":");
-            tpEnd.setHour(Integer.parseInt(part4[0]));
-            tpEnd.setMinute(Integer.parseInt(part4[1]));
-            et.setText(name);
-            descEt.setText(descr);
-            locEt.setText(loc);
-        }
 
 
         repeatbtn.setOnClickListener(new View.OnClickListener() {
@@ -211,6 +229,8 @@ public class EditEventActivity extends AppCompatActivity {
                         intent.putExtra("descr", descEt.getText().toString());
                         intent.putExtra("loc", locEt.getText().toString());
                         intent.putExtra("id", itemNumber);
+                        intent.putExtra("end_rep", end_rep);
+                        intent.putExtra("rep", rep);
                         intent.putExtra("ok", "ok");
                         startActivity(intent);
                     }
@@ -236,8 +256,8 @@ public class EditEventActivity extends AppCompatActivity {
                 descriptionEvent.clearFocus();
                 locationText.clearFocus();
 
-                String selectedStart = dpStart.getDayOfMonth() + "." + (dpStart.getMonth() + 1) + "." + dpStart.getYear() + " " + tpStart.getHour() + ":" + tpStart.getMinute();
-                String selectdEnd = dpEnd.getDayOfMonth() + "." + (dpEnd.getMonth() + 1) + "." + dpEnd.getYear() + " " + tpEnd.getHour() + ":" + tpEnd.getMinute();
+                final String selectedStart = dpStart.getDayOfMonth() + "." + (dpStart.getMonth() + 1) + "." + dpStart.getYear() + " " + tpStart.getHour() + ":" + tpStart.getMinute();
+                final String selectdEnd = dpEnd.getDayOfMonth() + "." + (dpEnd.getMonth() + 1) + "." + dpEnd.getYear() + " " + tpEnd.getHour() + ":" + tpEnd.getMinute();
 
                 String repeat = "";
                 String end_repeat = "";
@@ -275,8 +295,10 @@ public class EditEventActivity extends AppCompatActivity {
                             end_repeat = bundle.getString("times");
                         }
                     }
-                    else
-                        repeat = event.getRepeat();
+                    else {
+                        repeat = rep;
+                        end_repeat = end_rep;
+                    }
                 } else
                 {
                     if (repeatbtn.getText().equals("Каждый день")) {
@@ -372,12 +394,124 @@ public class EditEventActivity extends AppCompatActivity {
                         temp.setTime(calStart.getTime());
                     }
                 }
+                final String mRepeat = repeat;
+                final String mEnd = end_repeat;
                 if (nameEvent.getText().toString().replaceAll("[\\s\\d]", "").length() > 0) {
-                    //events[(int)itemNumber] = new Event((int)itemNumber, nameEvent.getText().toString(), selectedStart, selectdEnd, descriptionEvent.getText().toString());
+                    //mDbHelper.editEventById((int) itemNumber, nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
 
-                    mDbHelper.editEventById((int) itemNumber, nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
+                    final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+                    DatumEvents datEv = new DatumEvents(descriptionEvent.getText().toString(), locationText.getText().toString(), nameEvent.getText().toString(), "");
+                    retrofitClient.getEventRepository().update(itemNumber, datEv).enqueue(new Callback<Events>() {
+                        @Override
+                        public void onResponse(Call<Events> call, Response<Events> response) {
+                            final List<DatumEvents> event = Arrays.asList(response.body().getData());
+                            Calendar calStart = new GregorianCalendar();
+                            Calendar calEnd = new GregorianCalendar();
+                            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                            try {
+                                calStart.setTime(format.parse(selectedStart));
+                                calEnd.setTime(format.parse(selectdEnd));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            String rule = "";
+                            if ((mRepeat != null)&&(!mRepeat.equals(""))) {
+                                String[] parts = mRepeat.split(" ");
+                                if (!parts[2].equals("*"))
+                                    rule += "FREQ=DAILY;INTERVAL=" + parts[2] + ";";
+                                else if (!parts[3].equals("*")) {
+                                    rule += "FREQ=WEEKLY;INTERVAL=" + parts[3] + ";";
+                                    String[] days = parts[5].split(",");
+                                    rule += "BYDAY=";
+                                    String byday = "";
+                                    for (String day : days) {
+                                        if (day.equals("1"))
+                                            if (byday.equals(""))
+                                                byday = "MO";
+                                            else
+                                                byday += ",MO";
+                                        if (day.equals("2"))
+                                            if (byday.equals(""))
+                                                byday = "TU";
+                                            else
+                                                byday += ",TU";
+                                        if (day.equals("3"))
+                                            if (byday.equals(""))
+                                                byday = "WE";
+                                            else
+                                                byday += ",WE";
+                                        if (day.equals("4"))
+                                            if (byday.equals(""))
+                                                byday = "TH";
+                                            else
+                                                byday += ",TH";
+                                        if (day.equals("5"))
+                                            if (byday.equals(""))
+                                                byday = "FR";
+                                            else
+                                                byday += ",FR";
+                                        if (day.equals("6"))
+                                            if (byday.equals(""))
+                                                byday = "SA";
+                                            else
+                                                byday += ",SA";
+                                        if (day.equals("7"))
+                                            if (byday.equals(""))
+                                                byday = "SU";
+                                            else
+                                                byday += ",SU";
 
-                    Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
+                                    }
+                                    rule += byday + ";";
+                                }
+                                if (!mEnd.equals("")) {
+                                    String[] date = mEnd.split(".");
+                                    if (date.length > 1)
+                                        rule += "UNTIL=" + date[2] + date[1] + date[0] + "T000000Z;";
+                                    else
+                                        rule += "COUNT=" + mEnd + ";";
+                                }
+                            } else {
+                                rule = "FREQ=DAILY;COUNT=1";
+                            }
+                            DatumPatterns datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", rule,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                            retrofitClient.getEventPatternRepository().update(itemNumber,datP).enqueue(new Callback<Patterns>() {
+                                @Override
+                                public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                                    Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
+                                    Bundle bundle = new Bundle();
+                                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                                    Calendar cal = new GregorianCalendar();
+                                    try {
+                                        cal.setTime(dateFormat.parse(selectedStart));
+                                    } catch (ParseException e) {
+                                        e.printStackTrace();
+                                    }
+                                    dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
+                                    bundle.putString("Date", dateFormat.format(cal.getTime()));
+                                    dateFormat = new SimpleDateFormat("HH");
+                                    bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
+                                    intent.putExtras(bundle);
+                                    startActivity(intent);
+                                    overridePendingTransition (R.anim.enter, R.anim.exit);
+                                }
+
+                                @Override
+                                public void onFailure(Call<Patterns> call, Throwable t) {
+
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Call<Events> call, Throwable t) {
+
+                        }
+                    });
+
+
+
+                    /*Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
                     Bundle bundle = new Bundle();
                     //bundle.putParcelableArray("events", events);
                     //bundle.putInt("size", size);
@@ -394,7 +528,7 @@ public class EditEventActivity extends AppCompatActivity {
                     bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
                     intent.putExtras(bundle);
                     startActivity(intent);
-                    overridePendingTransition (R.anim.enter, R.anim.exit);
+                    overridePendingTransition (R.anim.enter, R.anim.exit);*/
                 } else
                     Toast.makeText(EditEventActivity.this, "Название события не валидно", Toast.LENGTH_SHORT).show();
             }
