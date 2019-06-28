@@ -23,7 +23,7 @@ public class EventsService {
     private Events eventResponse;
     private List<DatumEventsInstances> eventsInstancesResponse;
 
-    public List<DatumEventsInstances> getAll(Calendar from, Calendar to) {
+    /*public List<DatumEventsInstances> getAll(Calendar from, Calendar to) {
         retrofitClient.getEventRepository().getInstancesByInterval(from.getTimeInMillis(), to.getTimeInMillis()).enqueue(new Callback<EventsInstances>() {
             @Override
             public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
@@ -92,5 +92,5 @@ public class EventsService {
 
     public Events getEventResponse() {
         return eventResponse;
-    }
+    }*/
 }

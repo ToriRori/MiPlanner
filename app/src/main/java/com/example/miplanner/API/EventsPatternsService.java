@@ -29,7 +29,7 @@ public class EventsPatternsService {
             }
         });
         return eventPatternResponse;
-    }*/
+    }
 
     public Patterns save(Long eventId, DatumPatterns eventPattern) {
         retrofitClient.getEventPatternRepository().save(eventId, eventPattern).enqueue(new Callback<Patterns>() {
@@ -51,7 +51,7 @@ public class EventsPatternsService {
     }
 
     public Patterns update(Long id, DatumPatterns eventPattern) {
-        retrofitClient.getEventPatternRepository().update(id, eventPattern).enqueue(new Callback<Patterns>() {
+        retrofitClient.getEventPatternRepository().update(id, eventPattern, ).enqueue(new Callback<Patterns>() {
             @Override
             public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                 if (response.isSuccessful())
@@ -77,6 +77,6 @@ public class EventsPatternsService {
             public void onFailure(Call<Void> call, Throwable throwable) {
             }
         });
-    }
+    }*/
 
 }

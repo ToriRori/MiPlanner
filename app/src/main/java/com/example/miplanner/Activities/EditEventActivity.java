@@ -38,8 +38,8 @@ import scala.util.parsing.combinator.testing.Str;
 
 public class EditEventActivity extends AppCompatActivity {
 
-    private CalendarDbHelper mDbHelper;
-
+    //private CalendarDbHelper mDbHelper;
+    String tokenID = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +57,8 @@ public class EditEventActivity extends AppCompatActivity {
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
         final Button addBtn = findViewById(R.id.buttonAddEvent);
 
-
         final Bundle bundle = getIntent().getExtras();
         final long itemNumber  = bundle.getLong("event_id");
-
         final String date = bundle.getString("day");
         final String rep = bundle.getString("rep");
         final String   startDate = bundle.getString("start_date");
@@ -71,7 +69,7 @@ public class EditEventActivity extends AppCompatActivity {
         final String descr = bundle.getString("descr");
         final String loc = bundle.getString("loc");
         final String end_rep = bundle.getString("end_rep");
-
+        tokenID =bundle.getString("token");
 
         if (date != null) {
             SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
@@ -137,7 +135,7 @@ public class EditEventActivity extends AppCompatActivity {
         }
 
 
-        mDbHelper = new CalendarDbHelper(this);
+        //mDbHelper = new CalendarDbHelper(this);
 
         tpStart.setIs24HourView(true);
         tpEnd.setIs24HourView(true);
@@ -401,7 +399,7 @@ public class EditEventActivity extends AppCompatActivity {
 
                     final RetrofitClient retrofitClient = RetrofitClient.getInstance();
                     DatumEvents datEv = new DatumEvents(descriptionEvent.getText().toString(), locationText.getText().toString(), nameEvent.getText().toString(), "");
-                    retrofitClient.getEventRepository().update(itemNumber, datEv).enqueue(new Callback<Events>() {
+                    retrofitClient.getEventRepository().update(itemNumber, datEv, tokenID).enqueue(new Callback<Events>() {
                         @Override
                         public void onResponse(Call<Events> call, Response<Events> response) {
                             final List<DatumEvents> event = Arrays.asList(response.body().getData());
@@ -475,7 +473,7 @@ public class EditEventActivity extends AppCompatActivity {
                                 rule = "FREQ=DAILY;COUNT=1";
                             }
                             DatumPatterns datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", rule,calStart.getTimeInMillis(),"Asia/Vladivostok");
-                            retrofitClient.getEventPatternRepository().update(itemNumber,datP).enqueue(new Callback<Patterns>() {
+                            retrofitClient.getEventPatternRepository().update(itemNumber,datP, tokenID).enqueue(new Callback<Patterns>() {
                                 @Override
                                 public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                                     Intent intent = new Intent(EditEventActivity.this, MainActivity.class);

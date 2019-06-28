@@ -73,13 +73,15 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     List<CalendarEvent> eventList = new ArrayList<>();
 
     String start = null;
-
+    String tokenID = null;
 
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
                              final Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.calendar_fragment, container, false);
         ButterKnife.bind(getActivity());
+        Bundle bundle = getArguments();
+        tokenID = bundle.getString("token");
 
         minDate.set(Calendar.MONTH, 0);
         minDate.set(Calendar.DAY_OF_MONTH, 1);
@@ -89,7 +91,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         maxDate.set(Calendar.HOUR_OF_DAY, 23);
         if (start == null) {
             final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-            retrofitClient.getEventRepository().getInstancesByInterval(minDate.getTimeInMillis(), maxDate.getTimeInMillis()).enqueue(new Callback<EventsInstances>() {
+            retrofitClient.getEventRepository().getInstancesByInterval(minDate.getTimeInMillis(), maxDate.getTimeInMillis(), tokenID).enqueue(new Callback<EventsInstances>() {
                 @Override
                 public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
                     if (response.isSuccessful()) {
@@ -98,7 +100,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                             evsInst = Arrays.asList(response.body().getData());
                             for (int i = 0; i < evsInst.size(); i++) {
                                 final int fi = i;
-                                retrofitClient.getEventRepository().getEventsById(new Long[]{evsInst.get(i).getEventId()}).enqueue(new Callback<com.example.miplanner.POJO.Events>() {
+                                retrofitClient.getEventRepository().getEventsById(new Long[]{evsInst.get(i).getEventId()}, tokenID).enqueue(new Callback<com.example.miplanner.POJO.Events>() {
                                     @Override
                                     public void onResponse(Call<com.example.miplanner.POJO.Events> call, Response<com.example.miplanner.POJO.Events> response) {
                                         if (response.isSuccessful()) {
@@ -242,6 +244,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             Date date = day.getDate();
             SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
             intent.putExtra("day", format.format(date));
+            intent.putExtra("token", tokenID);
             startActivity(intent);
             getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
         }
@@ -250,7 +253,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
 
     public void getEvents(final int fi, final DatumEvents evs) {
         RetrofitClient retrofitClient = RetrofitClient.getInstance();
-        retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(fi).getEventId()).enqueue(new Callback<Patterns>() {
+        retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(fi).getEventId(), tokenID).enqueue(new Callback<Patterns>() {
             @Override
             public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                 if (response.isSuccessful()&&(response.body().getData() != null)) {
@@ -453,7 +456,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                         @Override
                         public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
                             List<DatumEventsInstances> evsInst = Arrays.asList(response.body().getData());
-                            retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(0).getEventId()).enqueue(new Callback<Patterns>() {
+                            retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(0).getEventId(), tokenID).enqueue(new Callback<Patterns>() {
                                 @Override
                                 public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                                     List<DatumPatterns> patt = Arrays.asList(response.body().getData());
@@ -473,6 +476,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                                     bundle.putString("start_time", format2.format(cal1.getTime()));
                                     bundle.putString("end_date", format1.format(cal2.getTime()));
                                     bundle.putString("end_time", format2.format(cal2.getTime()));
+                                    bundle.putString("token", tokenID);
 
                                     RRule rule = null;
                                     String day = "*";
@@ -541,7 +545,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                 public void onClick(View v) {
                     //mDbHelper.deleteEventById((int) event.getId());
                     RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                    retrofitClient.getEventRepository().delete(event.getId()).enqueue(new Callback<Void>() {
+                    retrofitClient.getEventRepository().delete(event.getId(), tokenID).enqueue(new Callback<Void>() {
                         @Override
                         public void onResponse(Call<Void> call, Response<Void> response) {
                             start = null;

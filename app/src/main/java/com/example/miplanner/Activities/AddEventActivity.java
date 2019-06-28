@@ -38,7 +38,8 @@ import retrofit2.Response;
 
 public class AddEventActivity extends AppCompatActivity {
 
-    private CalendarDbHelper mDbHelper;
+    //private CalendarDbHelper mDbHelper;
+    String tokenID = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +48,7 @@ public class AddEventActivity extends AppCompatActivity {
         Button addBtn = findViewById(R.id.buttonAddEvent);
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
 
-        mDbHelper = new CalendarDbHelper(this);
+        //mDbHelper = new CalendarDbHelper(this);
 
 
         TimePicker tpStart = findViewById(R.id.timePickerStart);
@@ -61,7 +62,7 @@ public class AddEventActivity extends AppCompatActivity {
         tpEnd.setIs24HourView(true);
 
         final Bundle bundle = getIntent().getExtras();
-        String date = null, startDate = null, endDate = null, startTime = null, endTime = null, name = null, descr = null, loc = null;
+        String  date = null, startDate = null, endDate = null, startTime = null, endTime = null, name = null, descr = null, loc = null;
         if(bundle != null) {
             date = bundle.getString("day");
             if (bundle.getString("rep") != null)
@@ -73,7 +74,9 @@ public class AddEventActivity extends AppCompatActivity {
             name = bundle.getString("name");
             descr = bundle.getString("descr");
             loc = bundle.getString("loc");
+            tokenID = bundle.getString("token");
         }
+        final Long eventId = bundle.getLong("event_id");
 
         if (date != null) {
             SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
@@ -368,7 +371,7 @@ public class AddEventActivity extends AppCompatActivity {
                     //mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
                     final RetrofitClient retrofitClient = RetrofitClient.getInstance();
                     DatumEvents datEv = new DatumEvents(descriptionEvent.getText().toString(), locationText.getText().toString(), nameEvent.getText().toString(), "");
-                    retrofitClient.getEventRepository().save(datEv).enqueue(new Callback<Events>() {
+                    retrofitClient.getEventRepository().update(eventId,datEv,tokenID).enqueue(new Callback<Events>() {
                         @Override
                         public void onResponse(Call<Events> call, Response<Events> response) {
                             List<DatumEvents> event = Arrays.asList(response.body().getData());
@@ -442,7 +445,7 @@ public class AddEventActivity extends AppCompatActivity {
                                 }
                             }
                             DatumPatterns datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", rule,calStart.getTimeInMillis(),"Asia/Vladivostok");
-                            retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP).enqueue(new Callback<Patterns>() {
+                            retrofitClient.getEventPatternRepository().update(eventId,datP,tokenID).enqueue(new Callback<Patterns>() {
                                 @Override
                                 public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                                     Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
