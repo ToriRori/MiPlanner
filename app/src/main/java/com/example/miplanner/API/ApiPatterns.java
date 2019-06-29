@@ -27,10 +27,10 @@ public interface ApiPatterns {
     @Headers({
             "Accept: application/json",
             "Content-Type: application/json",
-            "X-Firebase-Auth: serega_mem"
+            //"X-Firebase-Auth: serega_mem"
     })
     @POST("/api/v1/patterns")
-    Call<Patterns> save(@Query("event_id") Long eventId, @Body DatumPatterns eventPattern);
+    Call<Patterns> save(@Query("event_id") Long eventId, @Body DatumPatterns eventPattern, @Header("X-Firebase-Auth") String tokenID);
 
     @Headers({
             "Accept: application/json",

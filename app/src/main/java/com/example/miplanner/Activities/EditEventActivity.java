@@ -14,8 +14,6 @@ import android.widget.PopupWindow;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import com.example.miplanner.Data.CalendarDbHelper;
-import com.example.miplanner.Event;
 import com.example.miplanner.POJO.DatumEvents;
 import com.example.miplanner.POJO.DatumPatterns;
 import com.example.miplanner.POJO.Events;
@@ -34,7 +32,6 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import scala.util.parsing.combinator.testing.Str;
 
 public class EditEventActivity extends AppCompatActivity {
 
@@ -134,15 +131,11 @@ public class EditEventActivity extends AppCompatActivity {
                 repeatbtn.setText("Другое...");
         }
 
-
-        //mDbHelper = new CalendarDbHelper(this);
-
         tpStart.setIs24HourView(true);
         tpEnd.setIs24HourView(true);
 
+        //mDbHelper = new CalendarDbHelper(this);
         //final Event event = mDbHelper.getEventById((int)itemNumber);
-
-
 
         repeatbtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -215,7 +208,6 @@ public class EditEventActivity extends AppCompatActivity {
                         String selectedStartt = tpStart.getHour()+":"+tpStart.getMinute();
                         String selectedEndt = tpEnd.getHour()+":"+tpEnd.getMinute();
 
-
                         popupWindow.dismiss();
 
                         Intent intent = new Intent(EditEventActivity.this, RepeatEventActivity.class);
@@ -259,7 +251,6 @@ public class EditEventActivity extends AppCompatActivity {
 
                 String repeat = "";
                 String end_repeat = "";
-
 
                 if (repeatbtn.getText().equals("Другое...")) {
                     String repeatTimes = bundle.getString("count");
@@ -413,7 +404,7 @@ public class EditEventActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                             String rule = "";
-                            if ((mRepeat != null)&&(!mRepeat.equals(""))) {
+                            if (!mRepeat.equals("")) {
                                 String[] parts = mRepeat.split(" ");
                                 if (!parts[2].equals("*"))
                                     rule += "FREQ=DAILY;INTERVAL=" + parts[2] + ";";
@@ -489,6 +480,7 @@ public class EditEventActivity extends AppCompatActivity {
                                     bundle.putString("Date", dateFormat.format(cal.getTime()));
                                     dateFormat = new SimpleDateFormat("HH");
                                     bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
+                                    bundle.putString("token", tokenID);
                                     intent.putExtras(bundle);
                                     startActivity(intent);
                                     overridePendingTransition (R.anim.enter, R.anim.exit);

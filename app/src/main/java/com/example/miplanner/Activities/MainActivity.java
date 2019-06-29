@@ -1,10 +1,7 @@
 package com.example.miplanner.Activities;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -33,17 +30,14 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GetTokenResult;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-
-import okhttp3.OkHttpClient;
-
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
@@ -51,6 +45,8 @@ public class MainActivity extends AppCompatActivity
     private static int RC_SIGN_IN = 9001;
 
     GoogleSignInClient mGoogleSignInClient;
+    private FirebaseAuth mAuth;
+    FirebaseUser user;
     String tokenId = null;
     //private CalendarDbHelper mDbHelper;
 
@@ -59,26 +55,25 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (getIntent().getExtras() != null) {
+            tokenId = getIntent().getExtras().getString("token");
+            getDay(getIntent().getExtras());
+        }
+
         final ActionBar actionBar = getSupportActionBar();
         actionBar.setHomeAsUpIndicator(R.drawable.ic_baseline_menu_24px);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
-        Bundle bundle = getIntent().getExtras();
-        if (bundle != null) {
-            Parcelable[] temp = bundle.getParcelableArray("events");
-            if (bundle.getString("Date") != null)
-                getDay(bundle);
-        }
-
         NavigationView navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        navigationView.setNavigationItemSelectedListener(null);
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.server_client_id))
                 .requestEmail()
                 .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+        mAuth = FirebaseAuth.getInstance();
         View headerLayout = navigationView.inflateHeaderView(R.layout.nav_header_main);
 
         headerLayout.findViewById(R.id.sign_in_button).setOnClickListener(new View.OnClickListener() {
@@ -95,33 +90,6 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        /*mDbHelper = new CalendarDbHelper(this);
-        if (mDbHelper.eventsIsEmpty()) {
-            Calendar startTime1 = Calendar.getInstance();
-            Calendar endTime1 = Calendar.getInstance();
-            endTime1.add(Calendar.DAY_OF_MONTH, 3);
-            startTime1.set(Calendar.HOUR_OF_DAY, 11);
-            endTime1.set(Calendar.HOUR_OF_DAY, 11);
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            mDbHelper.insertEvent("Поход на Тобизина", "Незабываемое приключение!", "м. Тобизина", "", format.format(startTime1.getTime()), format.format(endTime1.getTime()));
-
-            Calendar startTime2 = Calendar.getInstance();
-            startTime2.add(Calendar.DAY_OF_YEAR, -2);
-            Calendar endTime2 = Calendar.getInstance();
-            endTime2.add(Calendar.DAY_OF_YEAR, 1);
-            startTime2.set(Calendar.HOUR_OF_DAY, 8);
-            endTime2.set(Calendar.HOUR_OF_DAY, 18);
-            mDbHelper.insertEvent("Поездка в Арсеньев", "Красивый маленький город", "Арсеньев", "", format.format(startTime2.getTime()), format.format(endTime2.getTime()));
-
-            Calendar startTime3 = Calendar.getInstance();
-            Calendar endTime3 = Calendar.getInstance();
-            startTime3.set(Calendar.HOUR_OF_DAY, 14);
-            startTime3.set(Calendar.MINUTE, 0);
-            endTime3.set(Calendar.HOUR_OF_DAY, 15);
-            endTime3.set(Calendar.MINUTE, 0);
-            mDbHelper.insertEvent("Встреча с Настей", "Лучшая подруга", "Арсеньев", "* * 3 * * * *", "7", format.format(startTime3.getTime()), format.format(endTime3.getTime()));
-        }*/
-
     }
 
     @Override
@@ -134,14 +102,20 @@ public class MainActivity extends AppCompatActivity
         SignInButton btnIn = headerLayout.findViewById(R.id.sign_in_button);
         Button btnOut = headerLayout.findViewById(R.id.sign_out_button);
 
+        updateUI(account);
+    }
+
+    public void updateUI(GoogleSignInAccount account) {
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        View headerLayout = navigationView.getHeaderView(0);
+        LinearLayout accountInfo = headerLayout.findViewById(R.id.account_info);
+        SignInButton btnIn = headerLayout.findViewById(R.id.sign_in_button);
+        Button btnOut = headerLayout.findViewById(R.id.sign_out_button);
+
         if (account != null) {
             String personName = account.getDisplayName();
-            String personGivenName = account.getGivenName();
-            String personFamilyName = account.getFamilyName();
             String personEmail = account.getEmail();
-            String personId = account.getId();
             Uri personPhoto = account.getPhotoUrl();
-            tokenId = account.getIdToken();
 
             ImageView image = headerLayout.findViewById(R.id.imageView);
             TextView name = headerLayout.findViewById(R.id.nameText);
@@ -152,25 +126,47 @@ public class MainActivity extends AppCompatActivity
             Picasso.with(this).load(personPhoto).into(image, new Callback() {
                 @Override
                 public void onSuccess() {
-
                 }
 
                 @Override
                 public void onError() {
-
                 }
             });
 
             accountInfo.setVisibility(View.VISIBLE);
             btnIn.setVisibility(View.GONE);
             btnOut.setVisibility(View.VISIBLE);
+            firebaseAuthWithGoogle(account);
         }
         else {
             accountInfo.setVisibility(View.GONE);
             btnIn.setVisibility(View.VISIBLE);
             btnOut.setVisibility(View.GONE);
+            tokenId = null;
         }
     }
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            Log.d("Mi", "signInWithCredential:success");
+                            user = mAuth.getCurrentUser();
+                            tokenId = user.getIdToken(false).getResult().getToken();
+                            Log.d("Mi", tokenId);
+
+                            NavigationView navigationView = findViewById(R.id.nav_view);
+                            navigationView.setNavigationItemSelectedListener(MainActivity.this);
+                        } else {
+                            Log.w("Mi", "signInWithCredential:failure", task.getException());
+                        }
+                    }
+                });
+    }
+
 
     private void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
@@ -183,6 +179,7 @@ public class MainActivity extends AppCompatActivity
         final LinearLayout accountInfo = headerLayout.findViewById(R.id.account_info);
         final SignInButton btnIn = headerLayout.findViewById(R.id.sign_in_button);
         final Button btnOut = headerLayout.findViewById(R.id.sign_out_button);
+        FirebaseAuth.getInstance().signOut();
 
         mGoogleSignInClient.signOut()
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
@@ -200,64 +197,18 @@ public class MainActivity extends AppCompatActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
-            // The Task returned from this call is always completed, no need to attach
-            // a listener.
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
         }
     }
 
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        View headerLayout = navigationView.getHeaderView(0);
-        LinearLayout accountInfo = headerLayout.findViewById(R.id.account_info);
-        SignInButton btnIn = headerLayout.findViewById(R.id.sign_in_button);
-        Button btnOut = headerLayout.findViewById(R.id.sign_out_button);
-
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-            String personName = account.getDisplayName();
-            String personGivenName = account.getGivenName();
-            String personFamilyName = account.getFamilyName();
-            String personEmail = account.getEmail();
-            String personId = account.getId();
-            Uri personPhoto = account.getPhotoUrl();
-            tokenId = account.getIdToken();
-
-            ImageView image = headerLayout.findViewById(R.id.imageView);
-            TextView name = headerLayout.findViewById(R.id.nameText);
-            TextView email = headerLayout.findViewById(R.id.emailText);
-
-            Picasso.with(this).load(personPhoto).into(image, new Callback() {
-                @Override
-                public void onSuccess() {
-
-                }
-
-                @Override
-                public void onError() {
-
-                }
-            });
-
-            name.setText(personName);
-            email.setText(personEmail);
-
-            accountInfo.setVisibility(View.VISIBLE);
-            btnIn.setVisibility(View.GONE);
-            btnOut.setVisibility(View.VISIBLE);
-
+            updateUI(account);
         } catch (ApiException e) {
-            // The ApiException status code indicates the detailed failure reason.
-            // Please refer to the GoogleSignInStatusCodes class reference for more information.
             Log.e("Mi", "получено исключение", e);
-
-            accountInfo.setVisibility(View.GONE);
-            btnIn.setVisibility(View.VISIBLE);
-            btnOut.setVisibility(View.GONE);
         }
     }
 
@@ -312,12 +263,9 @@ public class MainActivity extends AppCompatActivity
         fragment.setArguments(bundle);
 
         FragmentTransaction fragmentManager = getSupportFragmentManager().beginTransaction();
-        //fragmentManager.beginTransaction();
-        //fragmentManager.setCustomAnimations(R.anim.right_in, 0);
         fragmentManager.replace(R.id.container, fragment);
         fragmentManager.addToBackStack(null);
         fragmentManager.commit();
-        //overridePendingTransition(0,R.anim.left_out);
         item.setChecked(true);
         setTitle(item.getTitle());
 
@@ -338,9 +286,5 @@ public class MainActivity extends AppCompatActivity
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.container, fragment).commit();
-        /*Fragment fragment = new CalendarController();
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.add(R.id.container, fragment);
-        ft.commit();*/
     }
 }

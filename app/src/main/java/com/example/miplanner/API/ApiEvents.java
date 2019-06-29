@@ -17,11 +17,11 @@ import retrofit2.http.Query;
 import scala.util.parsing.combinator.testing.Str;
 
 public interface ApiEvents {
-    @Headers({
+    /*@Headers({
             "X-Firebase-Auth: serega_mem"
-    })
+    })*/
     @GET("/api/v1/events")
-    Call<Events> getEventsByInterval(@Query("from") Long from, @Query("to") Long to);
+    Call<Events> getEventsByInterval(@Query("from") Long from, @Query("to") Long to, @Header("X-Firebase-Auth") String tokenID);
 
     /*@Headers({
             "X-Firebase-Auth: serega_mem"
@@ -35,19 +35,19 @@ public interface ApiEvents {
     @GET("/api/v1/events/instances")
     Call<EventsInstances> getInstancesByInterval(@Query("from") Long from, @Query("to") Long to, @Header("X-Firebase-Auth") String tokenID);
 
-    @Headers({
+    /*@Headers({
             "X-Firebase-Auth: serega_mem"
-    })
+    })*/
     @GET("/api/v1/events/instances")
-    Call<EventsInstances> getInstancesById(@Query("id") Long[] id);
+    Call<EventsInstances> getInstancesById(@Query("id") Long[] id, @Header("X-Firebase-Auth") String tokenID);
 
     @Headers({
             "Accept: application/json",
             "Content-Type: application/json",
-            "X-Firebase-Auth: serega_mem"
+            //"X-Firebase-Auth: serega_mem"
     })
     @POST("/api/v1/events")
-    Call<Events> save(@Body DatumEvents event);
+    Call<Events> save(@Body DatumEvents event, @Header("X-Firebase-Auth") String tokenID);
 
     @Headers({
             "Accept: application/json",

@@ -1,10 +1,7 @@
 package com.example.miplanner.Fragments.Calendar;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
@@ -27,17 +24,16 @@ import com.example.miplanner.POJO.Events;
 import com.example.miplanner.POJO.EventsInstances;
 import com.example.miplanner.POJO.Patterns;
 import com.example.miplanner.R;
-import com.example.miplanner.Event;
 import com.example.miplanner.RetrofitClient;
 import com.github.tibolte.agendacalendarview.AgendaCalendarView;
 import com.github.tibolte.agendacalendarview.CalendarPickerController;
 import com.github.tibolte.agendacalendarview.models.CalendarEvent;
 import com.github.tibolte.agendacalendarview.models.DayItem;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.ical.values.DateValue;
 import com.google.ical.values.RRule;
 import com.google.ical.values.WeekdayNum;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -47,14 +43,12 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import scala.util.parsing.combinator.testing.Str;
 
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
@@ -67,7 +61,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
 
     Calendar minDate = Calendar.getInstance();
     Calendar maxDate = Calendar.getInstance();
-    List<DatumEventsInstances> evsInst = null;// = eventsService.getAll(minDate, maxDate);
+    List<DatumEventsInstances> evsInst = null;
     List<DatumEvents> evs = null;
     List<DatumPatterns> patt = null;
     List<CalendarEvent> eventList = new ArrayList<>();
@@ -75,12 +69,15 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     String start = null;
     String tokenID = null;
 
+    FirebaseAuth mAuth;
+
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
                              final Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.calendar_fragment, container, false);
         ButterKnife.bind(getActivity());
         Bundle bundle = getArguments();
+        mAuth = FirebaseAuth.getInstance();
         tokenID = bundle.getString("token");
 
         minDate.set(Calendar.MONTH, 0);
@@ -89,44 +86,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         maxDate.set(Calendar.MONTH, 11);
         maxDate.set(Calendar.DAY_OF_MONTH, 31);
         maxDate.set(Calendar.HOUR_OF_DAY, 23);
-        if (start == null) {
-            final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-            retrofitClient.getEventRepository().getInstancesByInterval(minDate.getTimeInMillis(), maxDate.getTimeInMillis(), tokenID).enqueue(new Callback<EventsInstances>() {
-                @Override
-                public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
-                    if (response.isSuccessful()) {
-                        if (response.body() != null) {
-                            eventList.clear();
-                            evsInst = Arrays.asList(response.body().getData());
-                            for (int i = 0; i < evsInst.size(); i++) {
-                                final int fi = i;
-                                retrofitClient.getEventRepository().getEventsById(new Long[]{evsInst.get(i).getEventId()}, tokenID).enqueue(new Callback<com.example.miplanner.POJO.Events>() {
-                                    @Override
-                                    public void onResponse(Call<com.example.miplanner.POJO.Events> call, Response<com.example.miplanner.POJO.Events> response) {
-                                        if (response.isSuccessful()) {
-                                            evs = Arrays.asList(response.body().getData());
-                                            getEvents(fi, evs.get(0));
-                                        } else
-                                            evs = null;
-                                    }
 
-                                    @Override
-                                    public void onFailure(Call<com.example.miplanner.POJO.Events> call, Throwable t) {
-
-                                    }
-                                });
-                            }
-                        }
-                    } else
-                        evs = null;
-                }
-
-                @Override
-                public void onFailure(Call<EventsInstances> call, Throwable throwable) {
-                     throwable.printStackTrace();
-                }
-            });
-        }
         TextView yearText = view.findViewById(R.id.year_text);
         yearText.setText(Integer.toString(minDate.get(Calendar.YEAR)));
 
@@ -147,6 +107,10 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             }
 
         });
+
+        if (start == null) {
+            getEvents();
+        }
 
         /*mDbHelper = new CalendarDbHelper(getActivity());
 
@@ -250,8 +214,46 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         }
     };
 
+    public void getEvents() {
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getEventRepository().getInstancesByInterval(minDate.getTimeInMillis(), maxDate.getTimeInMillis(), tokenID).enqueue(new Callback<EventsInstances>() {
+            @Override
+            public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
+                if (response.isSuccessful()) {
+                    if (response.body() != null) {
+                        eventList.clear();
+                        evsInst = Arrays.asList(response.body().getData());
+                        for (int i = 0; i < evsInst.size(); i++) {
+                            final int fi = i;
+                            retrofitClient.getEventRepository().getEventsById(new Long[]{evsInst.get(i).getEventId()}, tokenID).enqueue(new Callback<com.example.miplanner.POJO.Events>() {
+                                @Override
+                                public void onResponse(Call<com.example.miplanner.POJO.Events> call, Response<com.example.miplanner.POJO.Events> response) {
+                                    if (response.isSuccessful()) {
+                                        evs = Arrays.asList(response.body().getData());
+                                        getEventsPatterns(fi, evs.get(0));
+                                    } else
+                                        evs = null;
+                                }
 
-    public void getEvents(final int fi, final DatumEvents evs) {
+                                @Override
+                                public void onFailure(Call<com.example.miplanner.POJO.Events> call, Throwable t) {
+
+                                }
+                            });
+                        }
+                    }
+                } else
+                    evs = null;
+            }
+
+            @Override
+            public void onFailure(Call<EventsInstances> call, Throwable throwable) {
+                throwable.printStackTrace();
+            }
+        });
+    }
+
+    public void getEventsPatterns(final int fi, final DatumEvents evs) {
         RetrofitClient retrofitClient = RetrofitClient.getInstance();
         retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(fi).getEventId(), tokenID).enqueue(new Callback<Patterns>() {
             @Override
@@ -424,8 +426,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         else {
             Intent intent = new Intent(getActivity(), AddEventActivity.class);
             Bundle bundle = new Bundle();
-            //bundle.putParcelableArray("events", events);
-            //bundle.putInt("size", size);
+
             Date cal = event.getDayReference().getDate();
             SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
             bundle.putString("day", format.format(cal));
@@ -450,94 +451,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             btnEdit.setOnClickListener(new Button.OnClickListener(){
                 @Override
                 public void onClick(View v) {
-                    // TODO Auto-generated method stub
-                    final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                    retrofitClient.getEventRepository().getInstancesById(new Long[]{event.getId()}).enqueue(new Callback<EventsInstances>() {
-                        @Override
-                        public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
-                            List<DatumEventsInstances> evsInst = Arrays.asList(response.body().getData());
-                            retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(0).getEventId(), tokenID).enqueue(new Callback<Patterns>() {
-                                @Override
-                                public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                                    List<DatumPatterns> patt = Arrays.asList(response.body().getData());
-                                    Intent intent = new Intent(getActivity(), EditEventActivity.class);
-                                    Bundle bundle = new Bundle();
-                                    bundle.putLong("event_id", event.getId());
-                                    bundle.putString("name", event.getTitle());
-                                    bundle.putString("descr", ((DrawableCalendarEvent)event).getDescription());
-                                    bundle.putString("loc", ((DrawableCalendarEvent)event).getLocation());
-                                    SimpleDateFormat format1 = new SimpleDateFormat("dd.MM.yyyy");
-                                    SimpleDateFormat format2 = new SimpleDateFormat("HH:mm");
-                                    Calendar cal1 = new GregorianCalendar();
-                                    Calendar cal2 = new GregorianCalendar();
-                                    cal1.setTimeInMillis(patt.get(0).getStartedAt());
-                                    cal2.setTimeInMillis(patt.get(0).getStartedAt()+patt.get(0).getDuration());
-                                    bundle.putString("start_date", format1.format(cal1.getTime()));
-                                    bundle.putString("start_time", format2.format(cal1.getTime()));
-                                    bundle.putString("end_date", format1.format(cal2.getTime()));
-                                    bundle.putString("end_time", format2.format(cal2.getTime()));
-                                    bundle.putString("token", tokenID);
-
-                                    RRule rule = null;
-                                    String day = "*";
-                                    String week = "*";
-                                    String month = "*";
-                                    String days = "*";
-                                    String year = "*";
-                                    try {
-                                        rule = new RRule("RRULE:"+patt.get(0).getRrule());
-                                        rule.toIcal();
-                                    } catch (ParseException e) {
-                                        e.printStackTrace();
-                                    }
-                                    switch (rule.getFreq()) {
-                                        case DAILY:
-                                            day = Integer.toString(rule.getInterval());
-                                            break;
-                                        case WEEKLY:
-                                            week = Integer.toString(rule.getInterval());
-                                            if (rule.getByDay().size() > 0) {
-                                                days = "";
-                                                for (WeekdayNum dayOfWeek : rule.getByDay())
-                                                    days += dayOfWeek.num + ",";
-                                                days = days.substring(0, days.length() - 1);
-                                            } else
-                                                days = "1,2,3,4,5,6,7";
-                                            break;
-                                        case MONTHLY:
-                                            month = Integer.toString(rule.getInterval());
-                                            break;
-                                        case YEARLY:
-                                            year = Integer.toString(rule.getInterval());
-                                    }
-                                    String rep = "* * " + day + " " + week + " " + month + " " + days + " " + year;
-                                    String end = "";
-                                    DateValue dateEnd = rule.getUntil();
-                                    if (dateEnd != null)
-                                        end = dateEnd.day() + "." + dateEnd.month() + "." + dateEnd.year();
-                                    else if (rule.getCount() != 0)
-                                        end = Integer.toString(rule.getCount());
-
-
-                                    bundle.putString("rep", rep);
-                                    bundle.putString("end_rep", end);
-                                    intent.putExtras(bundle);
-                                    startActivity(intent);
-                                    getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
-                                }
-
-                                @Override
-                                public void onFailure(Call<Patterns> call, Throwable t) {
-
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onFailure(Call<EventsInstances> call, Throwable t) {
-
-                        }
-                    });
+                    goToEdit(event);
                 }});
             Button btnDelete = popupView.findViewById(R.id.delete_btn);
             btnDelete.setOnClickListener(new Button.OnClickListener(){
@@ -561,6 +475,98 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                 }});
             popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
         }
+    }
+
+    public void goToEdit(final CalendarEvent event) {
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getEventRepository().getInstancesById(new Long[]{event.getId()}, tokenID).enqueue(new Callback<EventsInstances>() {
+            @Override
+            public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
+                List<DatumEventsInstances> evsInst = Arrays.asList(response.body().getData());
+                retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(0).getEventId(), tokenID).enqueue(new Callback<Patterns>() {
+                    @Override
+                    public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                        List<DatumPatterns> patt = Arrays.asList(response.body().getData());
+                        Intent intent = new Intent(getActivity(), EditEventActivity.class);
+                        Bundle bundle = new Bundle();
+
+                        SimpleDateFormat format1 = new SimpleDateFormat("dd.MM.yyyy");
+                        SimpleDateFormat format2 = new SimpleDateFormat("HH:mm");
+                        Calendar cal1 = new GregorianCalendar();
+                        Calendar cal2 = new GregorianCalendar();
+                        cal1.setTimeInMillis(patt.get(0).getStartedAt());
+                        cal2.setTimeInMillis(patt.get(0).getStartedAt()+patt.get(0).getDuration());
+
+                        bundle.putLong("event_id", event.getId());
+                        bundle.putString("name", event.getTitle());
+                        bundle.putString("descr", ((DrawableCalendarEvent)event).getDescription());
+                        bundle.putString("loc", ((DrawableCalendarEvent)event).getLocation());
+                        bundle.putString("start_date", format1.format(cal1.getTime()));
+                        bundle.putString("start_time", format2.format(cal1.getTime()));
+                        bundle.putString("end_date", format1.format(cal2.getTime()));
+                        bundle.putString("end_time", format2.format(cal2.getTime()));
+                        bundle.putString("token", tokenID);
+
+                        RRule rule = null;
+                        String day = "*";
+                        String week = "*";
+                        String month = "*";
+                        String days = "*";
+                        String year = "*";
+                        try {
+                            rule = new RRule("RRULE:"+patt.get(0).getRrule());
+                            rule.toIcal();
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                        switch (rule.getFreq()) {
+                            case DAILY:
+                                day = Integer.toString(rule.getInterval());
+                                break;
+                            case WEEKLY:
+                                week = Integer.toString(rule.getInterval());
+                                if (rule.getByDay().size() > 0) {
+                                    days = "";
+                                    for (WeekdayNum dayOfWeek : rule.getByDay())
+                                        days += dayOfWeek.num + ",";
+                                    days = days.substring(0, days.length() - 1);
+                                } else
+                                    days = "1,2,3,4,5,6,7";
+                                break;
+                            case MONTHLY:
+                                month = Integer.toString(rule.getInterval());
+                                break;
+                            case YEARLY:
+                                year = Integer.toString(rule.getInterval());
+                        }
+                        String rep = "* * " + day + " " + week + " " + month + " " + days + " " + year;
+                        String end = "";
+                        DateValue dateEnd = rule.getUntil();
+                        if (dateEnd != null)
+                            end = dateEnd.day() + "." + dateEnd.month() + "." + dateEnd.year();
+                        else if (rule.getCount() != 0)
+                            end = Integer.toString(rule.getCount());
+
+
+                        bundle.putString("rep", rep);
+                        bundle.putString("end_rep", end);
+                        intent.putExtras(bundle);
+                        startActivity(intent);
+                        getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
+                    }
+
+                    @Override
+                    public void onFailure(Call<Patterns> call, Throwable t) {
+
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call<EventsInstances> call, Throwable t) {
+
+            }
+        });
     }
 
     public void refreshItems(){

@@ -14,8 +14,6 @@ import android.widget.PopupWindow;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import com.example.miplanner.Data.CalendarDbHelper;
-import com.example.miplanner.Event;
 import com.example.miplanner.POJO.DatumEvents;
 import com.example.miplanner.POJO.DatumPatterns;
 import com.example.miplanner.POJO.Events;
@@ -371,7 +369,7 @@ public class AddEventActivity extends AppCompatActivity {
                     //mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
                     final RetrofitClient retrofitClient = RetrofitClient.getInstance();
                     DatumEvents datEv = new DatumEvents(descriptionEvent.getText().toString(), locationText.getText().toString(), nameEvent.getText().toString(), "");
-                    retrofitClient.getEventRepository().update(eventId,datEv,tokenID).enqueue(new Callback<Events>() {
+                    retrofitClient.getEventRepository().save(datEv,tokenID).enqueue(new Callback<Events>() {
                         @Override
                         public void onResponse(Call<Events> call, Response<Events> response) {
                             List<DatumEvents> event = Arrays.asList(response.body().getData());
@@ -445,7 +443,7 @@ public class AddEventActivity extends AppCompatActivity {
                                 }
                             }
                             DatumPatterns datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", rule,calStart.getTimeInMillis(),"Asia/Vladivostok");
-                            retrofitClient.getEventPatternRepository().update(eventId,datP,tokenID).enqueue(new Callback<Patterns>() {
+                            retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP,tokenID).enqueue(new Callback<Patterns>() {
                                 @Override
                                 public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                                     Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
@@ -462,6 +460,7 @@ public class AddEventActivity extends AppCompatActivity {
                                     bundle.putString("Date", dateFormat.format(cal.getTime()));
                                     dateFormat = new SimpleDateFormat("HH");
                                     bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
+                                    bundle.putString("token", tokenID);
                                     intent.putExtras(bundle);
 
                                     startActivity(intent);
