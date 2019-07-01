@@ -19,6 +19,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.miplanner.Fragments.Calendar.CalendarController;
 import com.example.miplanner.R;
@@ -96,13 +97,28 @@ public class MainActivity extends AppCompatActivity
     public void onStart() {
         super.onStart();
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        View headerLayout = navigationView.getHeaderView(0);
-        LinearLayout accountInfo = headerLayout.findViewById(R.id.account_info);
-        SignInButton btnIn = headerLayout.findViewById(R.id.sign_in_button);
-        Button btnOut = headerLayout.findViewById(R.id.sign_out_button);
-
-        updateUI(account);
+        if (account != null) {
+            updateUI(account);
+            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                @Override
+                public void onComplete(@NonNull Task<GetTokenResult> task) {
+                    tokenId = task.getResult().getToken();
+                    NavigationView navigationView = findViewById(R.id.nav_view);
+                    navigationView.setNavigationItemSelectedListener(MainActivity.this);
+                }
+            });
+        }
+        else {
+            NavigationView navigationView = findViewById(R.id.nav_view);
+            View headerLayout = navigationView.getHeaderView(0);
+            LinearLayout accountInfo = headerLayout.findViewById(R.id.account_info);
+            SignInButton btnIn = headerLayout.findViewById(R.id.sign_in_button);
+            Button btnOut = headerLayout.findViewById(R.id.sign_out_button);
+            accountInfo.setVisibility(View.GONE);
+            btnIn.setVisibility(View.VISIBLE);
+            btnOut.setVisibility(View.GONE);
+            tokenId = null;
+        }
     }
 
     public void updateUI(GoogleSignInAccount account) {
@@ -162,6 +178,7 @@ public class MainActivity extends AppCompatActivity
                             navigationView.setNavigationItemSelectedListener(MainActivity.this);
                         } else {
                             Log.w("Mi", "signInWithCredential:failure", task.getException());
+                            tokenId = null;
                         }
                     }
                 });
@@ -180,7 +197,7 @@ public class MainActivity extends AppCompatActivity
         final SignInButton btnIn = headerLayout.findViewById(R.id.sign_in_button);
         final Button btnOut = headerLayout.findViewById(R.id.sign_out_button);
         FirebaseAuth.getInstance().signOut();
-
+        tokenId = null;
         mGoogleSignInClient.signOut()
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
@@ -188,7 +205,6 @@ public class MainActivity extends AppCompatActivity
                         btnIn.setVisibility(View.VISIBLE);
                         btnOut.setVisibility(View.GONE);
                         accountInfo.setVisibility(View.GONE);
-                        tokenId = null;
                     }
                 });
     }
@@ -238,6 +254,10 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         Fragment fragment = null;
         Class fragmentClass = null;
+
+        if (tokenId == null) {
+            Toast.makeText(MainActivity.this, "Вы не вошли", Toast.LENGTH_SHORT).show();
+        }
 
         int id = item.getItemId();
 
