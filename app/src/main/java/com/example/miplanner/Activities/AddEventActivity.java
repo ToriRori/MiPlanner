@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
+import com.google.ical.values.RRule;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -76,9 +77,8 @@ public class AddEventActivity extends AppCompatActivity {
                 final String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear()+" "+tpStart.getHour()+":"+tpStart.getMinute();
                 final String selectdEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+tpEnd.getHour()+":"+tpEnd.getMinute();
 
-                String[] res = getRepeat();
-                String repeat = res[0];
-                String end_repeat = res[1];
+                Bundle bundle = getIntent().getExtras();
+                String rrule = bundle.getString("rrule");
 
                 //check dates correct
                 SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
@@ -96,41 +96,32 @@ public class AddEventActivity extends AppCompatActivity {
                 }
 
                 //check repeat correct with dates
-                if (!repeat.equals("")){
+                if (rrule != null){
                     Calendar temp = new GregorianCalendar();
                     temp.setTime(calStart.getTime());
-                    String[] part = repeat.split(" ");
-                    if (!part[6].equals("*")) {
-                        temp.add(Calendar.YEAR, Integer.parseInt(part[6]));
-                        if (temp.before(calEnd)) {
-                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        temp.setTime(calStart.getTime());
+                    RRule rule = null;
+                    try {
+                        rule = new RRule("RRULE:"+bundle.getString("rrule"));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
                     }
-                    if (!part[4].equals("*")) {
-                        temp.add(Calendar.MONTH, Integer.parseInt(part[4]));
-                        if (temp.before(calEnd)) {
-                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        temp.setTime(calStart.getTime());
+                    switch(rule.getFreq()) {
+                        case DAILY :
+                            temp.add(Calendar.DAY_OF_YEAR, rule.getInterval());
+                            break;
+                        case WEEKLY:
+                            temp.add(Calendar.WEEK_OF_YEAR, rule.getInterval());
+                            break;
+                        case MONTHLY:
+                            temp.add(Calendar.MONTH, rule.getInterval());
+                            break;
+                        case YEARLY:
+                            temp.add(Calendar.YEAR, rule.getInterval());
+                            break;
                     }
-                    if (!part[3].equals("*")) {
-                        temp.add(Calendar.WEEK_OF_YEAR, Integer.parseInt(part[3]));
-                        if (temp.before(calEnd)) {
-                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        temp.setTime(calStart.getTime());
-                    }
-                    if (!part[2].equals("*")) {
-                        temp.add(Calendar.DAY_OF_YEAR, Integer.parseInt(part[2]));
-                        if (temp.before(calEnd)) {
-                            Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        temp.setTime(calStart.getTime());
+                    if (temp.before(calEnd)) {
+                        Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
+                        return;
                     }
                 }
 
@@ -139,7 +130,7 @@ public class AddEventActivity extends AppCompatActivity {
                     return;
                 }
 
-                requestForAdd(repeat, end_repeat);
+                requestForAdd(bundle.getString("rrule"));
             }
         });
     }
@@ -217,7 +208,7 @@ public class AddEventActivity extends AppCompatActivity {
             locationText.setText(loc);
         }
 
-        if (bundle.getString("end_rep") != null)
+        if (bundle.getString("rrule") != null)
             repeatbtn.setText("Другое...");
     }
 
@@ -307,9 +298,8 @@ public class AddEventActivity extends AppCompatActivity {
                     intent.putExtra("loc", locationText.getText().toString());
 
                     Bundle bundle = getIntent().getExtras();
-                    if (bundle.getString("rep") != null) {
-                        intent.putExtra("rep", bundle.getString("rep"));
-                        intent.putExtra("end_rep", bundle.getString("end_rep"));
+                    if (bundle.getString("rrule") != null) {
+                        intent.putExtra("rrule", bundle.getString("rrule"));
                         intent.putExtra("ok", "ok");
                     }
                     startActivity(intent);
@@ -320,136 +310,7 @@ public class AddEventActivity extends AppCompatActivity {
         }
     };
 
-    public String[] getRepeat() {
-        final Button repeatbtn = findViewById(R.id.buttonRepeat);
-        TimePicker tpStart = findViewById(R.id.timePickerStart);
-        DatePicker dpStart = findViewById(R.id.datePickerStart);
-        TimePicker tpEnd = findViewById(R.id.timePickerEnd);
-        DatePicker dpEnd = findViewById(R.id.datePickerEnd);
-
-        Bundle bundle = getIntent().getExtras();
-        String repeat = "", end_repeat = "";
-        if (repeatbtn.getText().equals("Другое...")) {
-            repeat = bundle.getString("rep");
-            end_repeat = bundle.getString("end_rep");
-        } else
-        {
-            if (repeatbtn.getText().equals("Каждый день")) {
-                repeat = "* * 1 * * * *";
-                end_repeat = "";
-            }
-
-            if (repeatbtn.getText().equals("Каждую неделю")) {
-                final String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear()+" "+tpStart.getHour()+":"+tpStart.getMinute();
-                final String selectdEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+tpEnd.getHour()+":"+tpEnd.getMinute();
-
-                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                Calendar calStart = new GregorianCalendar();
-                Calendar calEnd = new GregorianCalendar();
-                try {
-                    calStart.setTime(format.parse(selectedStart));
-                    calEnd.setTime(format.parse(selectdEnd));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                String days = calStart.get(Calendar.DAY_OF_WEEK)-1+"";
-                calStart.add(Calendar.DAY_OF_YEAR, 1);
-                while (calStart.before(calEnd)) {
-                    days += ","+(calStart.get(Calendar.DAY_OF_WEEK)-1);
-                    calStart.add(Calendar.DAY_OF_YEAR, 1);
-                }
-                repeat = "* * * 1 * "+ days +" *";
-                end_repeat = "";
-            }
-
-            if (repeatbtn.getText().equals("Каждый месяц")) {
-                repeat = "* * * * 1 * *";
-                end_repeat = "";
-            }
-
-            if (repeatbtn.getText().equals("Каждый год")) {
-                repeat = "* * * * * * 1";
-                end_repeat = "";
-            }
-
-            if (repeatbtn.getText().equals("Не повторяется")) {
-                repeat = "";
-                end_repeat = "";
-            }
-
-        }
-        String[] res = new String[2];
-        res[0] = repeat;
-        res[1] = end_repeat;
-        return res;
-    }
-
-    public String getRule(String mRepeat, String mEnd) {
-        String rule = "";
-        if (mRepeat.equals(""))
-            rule += "FREQ=DAILY;INTERVAL=7;COUNT=1;";
-        else {
-            String[] parts = mRepeat.split(" ");
-            if (!parts[2].equals("*"))
-                rule += "FREQ=DAILY;INTERVAL=" + parts[2] + ";";
-            else if (!parts[3].equals("*")) {
-                rule += "FREQ=WEEKLY;INTERVAL=" + parts[3] + ";";
-                String[] days = parts[5].split(",");
-                rule += "BYDAY=";
-                String byday = "";
-                for (String day : days) {
-                    if (day.equals("1"))
-                        if (byday.equals(""))
-                            byday = "MO";
-                        else
-                            byday = ",MO";
-                    if (day.equals("2"))
-                        if (byday.equals(""))
-                            byday = "TU";
-                        else
-                            byday = ",TU";
-                    if (day.equals("3"))
-                        if (byday.equals(""))
-                            byday = "WE";
-                        else
-                            byday = ",WE";
-                    if (day.equals("4"))
-                        if (byday.equals(""))
-                            byday = "TH";
-                        else
-                            byday = ",TH";
-                    if (day.equals("5"))
-                        if (byday.equals(""))
-                            byday = "FR";
-                        else
-                            byday = ",FR";
-                    if (day.equals("6"))
-                        if (byday.equals(""))
-                            byday = "SA";
-                        else
-                            byday = ",SA";
-                    if (day.equals("7"))
-                        if (byday.equals(""))
-                            byday = "SU";
-                        else
-                            byday = ",SU";
-
-                }
-                rule += byday + ";";
-            }
-            if (!mEnd.equals("")) {
-                String[] date = mEnd.split("\\.");
-                if (date.length > 1)
-                    rule += "UNTIL=" + date[2] + date[1] + date[0] + "T000000Z;";
-                else
-                    rule += "COUNT=" + mEnd + ";";
-            }
-
-        }
-        return rule;
-    }
-
-    public void requestForAdd(final String mRepeat, final String mEnd) {
+    public void requestForAdd(final String mRrule) {
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
         TimePicker tpStart = findViewById(R.id.timePickerStart);
         DatePicker dpStart = findViewById(R.id.datePickerStart);
@@ -483,7 +344,7 @@ public class AddEventActivity extends AppCompatActivity {
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
-                        String rule = getRule(mRepeat, mEnd);
+                        String rule = mRrule;
 
                         DatumPatterns datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", rule,calStart.getTimeInMillis(),"Asia/Vladivostok");
                         retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP,tokenID).enqueue(new Callback<Patterns>() {

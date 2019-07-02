@@ -38,7 +38,5 @@ public interface CalendarEvent {
 
     CalendarEvent copy();
 
-    String getRepeat();
-
-    String getEndRepeat();
+    String getRrule();
 }

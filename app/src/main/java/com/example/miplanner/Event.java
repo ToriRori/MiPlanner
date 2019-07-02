@@ -13,8 +13,7 @@ public class Event implements Parcelable {
     private String dateStart;
     private String dateEnd;
     private String location;
-    private String repeat;
-    private String endRepeat;
+    private String rrule;
 
     private Event(Parcel in) {
         this.id = in.readInt();
@@ -23,7 +22,7 @@ public class Event implements Parcelable {
         this.dateEnd = in.readString();
         this.description = in.readString();
         this.location = in.readString();
-        this.repeat = in.readString();
+        this.rrule = in.readString();
     }
 
     public Event(int id, String name, String dateStart, String dateEnd)
@@ -53,7 +52,7 @@ public class Event implements Parcelable {
         this.location = location;
     }
 
-    public Event(int id, String name, String dateStart, String dateEnd, String description, String location, String repeat)
+    public Event(int id, String name, String dateStart, String dateEnd, String description, String location, String rrule)
     {
         this.id = id;
         this.name = name;
@@ -61,21 +60,8 @@ public class Event implements Parcelable {
         this.dateEnd = dateEnd;
         this.description = description;
         this.location = location;
-        this.repeat = repeat;
+        this.rrule = rrule;
     }
-
-    public Event(int id, String name, String dateStart, String dateEnd, String description, String location, String repeat, String end_repeat)
-    {
-        this.id = id;
-        this.name = name;
-        this.dateStart = dateStart;
-        this.dateEnd = dateEnd;
-        this.description = description;
-        this.location = location;
-        this.repeat = repeat;
-        this.endRepeat = end_repeat;
-    }
-
 
     public int getId(){
         return id;
@@ -93,9 +79,7 @@ public class Event implements Parcelable {
 
     public String getLocation () {  return location;  }
 
-    public String getRepeat () {  return repeat;  }
-
-    public String getEndRepeat () {  return endRepeat;   }
+    public String getRRule () {  return rrule;  }
 
     public void setName(String new_name) {
         name = new_name;

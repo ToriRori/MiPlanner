@@ -264,48 +264,9 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     Calendar cal2 = new GregorianCalendar();
                     cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
                     cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
-                    RRule rule = null;
-                    String day = "*";
-                    String week = "*";
-                    String month = "*";
-                    String days = "*";
-                    String year = "*";
-                    try {
-                        rule = new RRule("RRULE:"+patt.get(0).getRrule());
-                        rule.toIcal();
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                    switch (rule.getFreq()) {
-                        case DAILY:
-                            day = Integer.toString(rule.getInterval());
-                            break;
-                        case WEEKLY:
-                            week = Integer.toString(rule.getInterval());
-                            if (rule.getByDay().size() > 0) {
-                                days = "";
-                                for (WeekdayNum dayOfWeek : rule.getByDay())
-                                    days += dayOfWeek.num + ",";
-                                days = days.substring(0, days.length() - 1);
-                            } else
-                                days = "1,2,3,4,5,6,7";
-                            break;
-                        case MONTHLY:
-                            month = Integer.toString(rule.getInterval());
-                            break;
-                        case YEARLY:
-                            year = Integer.toString(rule.getInterval());
-                    }
-                    String rep = "* * " + day + " " + week + " " + month + " " + days + " " + year;
-                    String end = "";
-                    DateValue dateEnd = rule.getUntil();
-                    if (dateEnd != null)
-                        end = dateEnd.day() + "." + dateEnd.month() + "." + dateEnd.year();
-                    else if (rule.getCount() != 0)
-                        end = Integer.toString(rule.getCount());
-
+                    String rrule = "RRULE:"+patt.get(0).getRrule();
                     DrawableCalendarEvent event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
-                            evs.getName(), evs.getDetails(), evs.getLocation(), rep, end, cal1, cal2, false, null);
+                            evs.getName(), evs.getDetails(), evs.getLocation(), rrule, cal1, cal2, false, null);
                     eventList.add(event);
                     if (eventList.size() == evsInst.size()) {
                         start = "ok";
@@ -319,7 +280,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
                     cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
                     DrawableCalendarEvent event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
-                            evs.getName(), evs.getDetails(), evs.getLocation(), "", "", cal1, cal2, false, null);
+                            evs.getName(), evs.getDetails(), evs.getLocation(), "", cal1, cal2, false, null);
                     eventList.add(event);
                     if (eventList.size() == evsInst.size()) {
                         start = "ok";
@@ -507,49 +468,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                         bundle.putString("end_time", format2.format(cal2.getTime()));
                         bundle.putString("token", tokenID);
 
-                        RRule rule = null;
-                        String day = "*";
-                        String week = "*";
-                        String month = "*";
-                        String days = "*";
-                        String year = "*";
-                        try {
-                            rule = new RRule("RRULE:"+patt.get(0).getRrule());
-                            rule.toIcal();
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
-                        switch (rule.getFreq()) {
-                            case DAILY:
-                                day = Integer.toString(rule.getInterval());
-                                break;
-                            case WEEKLY:
-                                week = Integer.toString(rule.getInterval());
-                                if (rule.getByDay().size() > 0) {
-                                    days = "";
-                                    for (WeekdayNum dayOfWeek : rule.getByDay())
-                                        days += dayOfWeek.num + ",";
-                                    days = days.substring(0, days.length() - 1);
-                                } else
-                                    days = "1,2,3,4,5,6,7";
-                                break;
-                            case MONTHLY:
-                                month = Integer.toString(rule.getInterval());
-                                break;
-                            case YEARLY:
-                                year = Integer.toString(rule.getInterval());
-                        }
-                        String rep = "* * " + day + " " + week + " " + month + " " + days + " " + year;
-                        String end = "";
-                        DateValue dateEnd = rule.getUntil();
-                        if (dateEnd != null)
-                            end = dateEnd.day() + "." + dateEnd.month() + "." + dateEnd.year();
-                        else if (rule.getCount() != 0)
-                            end = Integer.toString(rule.getCount());
-
-
-                        bundle.putString("rep", rep);
-                        bundle.putString("end_rep", end);
+                        bundle.putString("rrule", patt.get(0).getRrule());
                         intent.putExtras(bundle);
                         startActivity(intent);
                         getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);

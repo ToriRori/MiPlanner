@@ -213,7 +213,7 @@ public class CalendarDbHelper extends SQLiteOpenHelper {
                 .getColumnIndex(Events.EventAdd.COLUMN_REPEAT_END));
         cursor2.close();
 
-        return new Event(id, mName, mStartDate, mEndDate, mDescription, mLocation, mRepeat, mRepeatEnd);
+        return new Event(id, mName, mStartDate, mEndDate, mDescription, mLocation, mRepeat);
     }
 
     public void editEventById(int id, String name, String description, String location, String repeat, String end_repeat, String date_start, String date_end) {

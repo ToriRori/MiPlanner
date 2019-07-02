@@ -23,6 +23,8 @@ import android.widget.Toast;
 import com.example.miplanner.Data.CalendarDbHelper;
 import com.example.miplanner.Event;
 import com.example.miplanner.R;
+import com.google.ical.values.RRule;
+import com.google.ical.values.WeekdayNum;
 
 import org.w3c.dom.Text;
 
@@ -30,6 +32,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 public class RepeatEventActivity extends AppCompatActivity {
 
@@ -52,11 +55,11 @@ public class RepeatEventActivity extends AppCompatActivity {
 
         setTypeRepeatAdapter();
 
-        initFields();
+        setLayoutsForAdapter();
 
         setWeekButtonsListeners();
 
-        setLayoutsForAdapter();
+        initFields();
 
         final Button monBtn = findViewById(R.id.monday_btn);
         final Button tueBtn = findViewById(R.id.tuesday_btn);
@@ -87,60 +90,59 @@ public class RepeatEventActivity extends AppCompatActivity {
                 String week = "";
                 if (repeatType.getSelectedItemPosition() == 1) { //collect chosen days for week repeat
                     if (monBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        week = "1";
+                        week = "MO";
                     if (tueBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
                         if (week.equals(""))
-                            week = "2";
+                            week = "TU";
                         else
-                            week += ",2";
+                            week += ",TU";
                     if (wedBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
                         if (week.equals(""))
-                            week = "3";
+                            week = "WE";
                         else
-                            week += ",3";
+                            week += ",WE";
                     if (thuBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
                         if (week.equals(""))
-                            week = "4";
+                            week = "TH";
                         else
-                            week += ",4";
+                            week += ",TH";
                     if (friBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
                         if (week.equals(""))
-                            week = "5";
+                            week = "FR";
                         else
-                            week += ",5";
+                            week += ",FR";
                     if (satBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
                         if (week.equals(""))
-                            week = "6";
+                            week = "SA";
                         else
-                            week += ",6";
+                            week += ",SA";
                     if (sunBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
                         if (week.equals(""))
-                            week = "7";
+                            week = "SU";
                         else
-                            week += ",7";
+                            week += ",SU";
                     if (week.equals("")) {
                         Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
                         return;
                     }
                 }
 
-                String repeat = "";
+                String rrule = "FREQ=";
                 switch (repeatType.getSelectedItemPosition()) {
                     case 0:
-                        repeat = "* * " + repeatTimes.getText().toString() + " * * * *";
+                        rrule += "DAILY;";
                         break;
                     case 1:
-                        repeat = "* * * " + repeatTimes.getText().toString() + " * " + week + " *";
+                        rrule += "WEEKLY;";
                         break;
                     case 2:
-                        repeat = "* * * * " + repeatTimes.getText().toString() + " * *";
+                        rrule += "MONTHLY;";
                         break;
-                    case 3:
-                        repeat = "* * * * * * " + repeatTimes.getText().toString();
+                    case 4:
+                        rrule += "YEARLY;";
                         break;
                 }
-
-                intent.putExtra("rep", repeat);
+                rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
 
                 //collect end of repeat
                 int selectedRadio = ending.getCheckedRadioButtonId();
@@ -149,21 +151,19 @@ public class RepeatEventActivity extends AppCompatActivity {
                     return;
                 }
 
-                if (selectedRadio == neverEnding.getId())
-                    intent.putExtra("end_rep", "");
                 if (selectedRadio == dayEnding.getId()) {
                     if (dateEnding.getText().equals("")) {
                         Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    intent.putExtra("end_rep", dateEnding.getText().toString());
+                    rrule += "UNTIL="+dateEnding.getText().toString()+";";
                 }
                 if (selectedRadio == timesEnding.getId()) {
                     if (timesCount.getText().equals("")){
                         Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    intent.putExtra("end_rep", timesCount.getText().toString());
+                    rrule += "COUNT="+timesCount.getText().toString()+";";
                 }
 
 
@@ -176,7 +176,7 @@ public class RepeatEventActivity extends AppCompatActivity {
                 intent.putExtra("loc", bundle.getString("loc"));
                 intent.putExtra("token", bundle.getString("token"));
                 intent.putExtra("event_id", bundle.getLong("event_id"));
-
+                intent.putExtra("rrule", rrule);
                 startActivity(intent);
             }
         });
@@ -215,67 +215,74 @@ public class RepeatEventActivity extends AppCompatActivity {
         });
 
         if (bundle.getString("ok") != null) {
-            String rep = bundle.getString("rep");
-            if (!rep.equals("")) {
-                String[] part = rep.split(" ");
-                if (!part[6].equals("*")) {
-                    repeatTimes.setText(part[6]);
-                    repeatType.setSelection(3);
-                } else if (!part[4].equals("*")) {
-                    repeatTimes.setText(part[4]);
-                    repeatType.setSelection(2);
-                } else if (!part[3].equals("*")) {
-                    repeatTimes.setText(part[3]);
-                    repeatType.setSelection(1);
-                    String[] days = part[5].split(",");
-                    for (String day : days) {
-                        switch (day) {
-                            case "1":
-                                monBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                monBtn.setTextColor(getResources().getColor(R.color.white));
-                                break;
-                            case "2":
-                                tueBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                tueBtn.setTextColor(getResources().getColor(R.color.white));
-                                break;
-                            case "3":
-                                wedBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                wedBtn.setTextColor(getResources().getColor(R.color.white));
-                                break;
-                            case "4":
-                                thuBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                thuBtn.setTextColor(getResources().getColor(R.color.white));
-                                break;
-                            case "5":
-                                friBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                friBtn.setTextColor(getResources().getColor(R.color.white));
-                                break;
-                            case "6":
-                                satBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                satBtn.setTextColor(getResources().getColor(R.color.white));
-                                break;
-                            case "7":
-                                sunBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                sunBtn.setTextColor(getResources().getColor(R.color.white));
-                                break;
-                        }
-                    }
-                } else if (!part[2].equals("*")) {
-                    repeatTimes.setText(part[2]);
-                    repeatType.setSelection(0);
+            String rrule = bundle.getString("rrule");
+            if (rrule != null) {
+                RRule rule = null;
+                try {
+                    rule = new RRule("RRULE:"+rrule);
+                } catch (ParseException e) {
+                    e.printStackTrace();
                 }
-                String end = bundle.getString("end_rep");
-                if (end.equals("")) {
+                switch (rule.getFreq()) {
+                    case DAILY:
+                        repeatType.setSelection(0);
+                        break;
+                    case WEEKLY:
+                        repeatType.setSelection(1);
+                        List<WeekdayNum> days  = rule.getByDay();
+                        for (WeekdayNum day : days) {
+                            switch(day.num) {
+                                case 1:
+                                    monBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                    monBtn.setTextColor(getResources().getColor(R.color.white));
+                                    break;
+                                case 2:
+                                    tueBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                    tueBtn.setTextColor(getResources().getColor(R.color.white));
+                                    break;
+                                case 3:
+                                    wedBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                    wedBtn.setTextColor(getResources().getColor(R.color.white));
+                                    break;
+                                case 4:
+                                    thuBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                    thuBtn.setTextColor(getResources().getColor(R.color.white));
+                                    break;
+                                case 5:
+                                    friBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                    friBtn.setTextColor(getResources().getColor(R.color.white));
+                                    break;
+                                case 6:
+                                    satBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                    satBtn.setTextColor(getResources().getColor(R.color.white));
+                                    break;
+                                case 7:
+                                    sunBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
+                                    sunBtn.setTextColor(getResources().getColor(R.color.white));
+                                    break;
+                            }
+                        }
+                        break;
+                    case MONTHLY:
+                        repeatType.setSelection(2);
+                        break;
+                    case YEARLY:
+                        repeatType.setSelection(3);
+                        break;
+                }
+                repeatTimes.setText(Integer.toString(rule.getInterval()));
+
+                if (rule.getCount() == 0 && rule.getUntil() == null) {
                     ((RadioButton) ending.getChildAt(0)).setChecked(true);
                     neverEnding.setSelected(true);
-                } else if (end.split("\\.").length > 1) {
+                } else if (rule.getUntil() != null) {
                     ((RadioButton) ending.getChildAt(1)).setChecked(true);
                     dateEnding.setSelected(true);
-                    dateEnding.setText(end);
+                    dateEnding.setText(rule.getUntil().day()+"."+rule.getUntil().month()+"."+rule.getUntil().year());
                 } else {
                     ((RadioButton) ending.getChildAt(3)).setChecked(true);
                     timesEnding.setSelected(true);
-                    timesCount.setText(end);
+                    timesCount.setText(Integer.toString(rule.getCount()));
                 }
             }
         }

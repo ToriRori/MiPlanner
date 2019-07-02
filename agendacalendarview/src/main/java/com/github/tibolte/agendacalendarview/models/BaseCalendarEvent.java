@@ -77,13 +77,11 @@ public class BaseCalendarEvent implements CalendarEvent {
      */
     private double mTemperature;
 
-    private String mRepeat;
-
-    private String mEndRepeat;
+    private String mRrule;
 
     // region Constructor
 
-    public BaseCalendarEvent(long id, int color, String title, String description, String location, String repeat, String endRepeat, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
+    public BaseCalendarEvent(long id, int color, String title, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
         this.mId = id;
         this.mColor = color;
         this.mAllDay = allDay;
@@ -91,10 +89,9 @@ public class BaseCalendarEvent implements CalendarEvent {
         this.mTitle = title;
         this.mDescription = description;
         this.mLocation = location;
-        this.mRepeat = repeat;
+        this.mRrule = rrule;
         this.mStartTime = dateStart;
         this.mEndTime = dateEnd;
-        this.mEndRepeat = endRepeat;
     }
 
 
@@ -318,9 +315,7 @@ public class BaseCalendarEvent implements CalendarEvent {
         this.mTemperature = mTemperature;
     }
 
-    public String getRepeat() { return mRepeat; }
-
-    public String getEndRepeat() { return mEndRepeat; }
+    public String getRrule() { return mRrule; }
 
     @Override
     public CalendarEvent copy() {

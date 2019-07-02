@@ -8,14 +8,10 @@ import java.util.Calendar;
 public class DrawableCalendarEvent extends BaseCalendarEvent {
 
     // region Constructors
-    public DrawableCalendarEvent(long id, int color, String title, String description, String location, String repeat, String end_repeat, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
-        super(id, color, title, description, location, repeat, end_repeat, dateStart, dateEnd, allDay, duration);
+    public DrawableCalendarEvent(long id, int color, String title, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
+        super(id, color, title, description, location, rrule, dateStart, dateEnd, allDay, duration);
     }
 
-
-    public DrawableCalendarEvent(long id, int color, String title, String description, String location, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
-        super(id, color, title, description, location, dateStart, dateEnd, allDay, duration);
-    }
 
     public DrawableCalendarEvent(String title, String description, String location, int color, Calendar startTime, Calendar endTime, boolean allDay) {
         super(title, description, location, color, startTime, endTime, allDay);
