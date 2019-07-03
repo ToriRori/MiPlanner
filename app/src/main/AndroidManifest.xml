@@ -27,6 +27,17 @@
             android:name=".Activities.EditEventActivity"
             android:theme="@style/Theme.AppCompat.Translucent"
             android:windowSoftInputMode="stateHidden" />
+        <activity
+            android:name=".Activities.InfoEvent.InfoEventActivity"
+            android:theme="@style/Theme.AppCompat.Translucent" />
+        <activity
+            android:name=".Activities.InfoEvent.AddTaskActivity"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:windowSoftInputMode="stateHidden"/>
+        <activity
+            android:name=".Activities.InfoEvent.EditTaskActivity"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:windowSoftInputMode="stateHidden"/>
     </application>
 
 </manifest>

@@ -6,7 +6,7 @@
             android:id="@+id/calendar"
             android:title="Мой планнер" />
         <item
-            android:id="@+id/item2"
+            android:id="@+id/tasks"
             android:title="що то еще" />
         <item
             android:id="@+id/item3"

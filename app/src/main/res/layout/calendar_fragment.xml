@@ -41,7 +41,8 @@
         agendaCalendar:calendarDayTextColor="@color/theme_primary"
         agendaCalendar:calendarHeaderColor="@color/theme_primary_dark"
         agendaCalendar:calendarPastDayTextColor="@android:color/darker_gray"
-        agendaCalendar:fabColor="@color/theme_accent" >
+        agendaCalendar:fabColor="@color/theme_accent">
+
     </com.github.tibolte.agendacalendarview.AgendaCalendarView>
 
 </LinearLayout>

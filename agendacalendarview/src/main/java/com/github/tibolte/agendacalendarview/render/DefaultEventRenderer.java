@@ -27,7 +27,7 @@ public class DefaultEventRenderer extends EventRenderer<BaseCalendarEvent> {
 
         txtTitle.setText(event.getTitle());
         txtLocation.setText(event.getLocation());
-        if (event.getLocation().length() > 0) {
+        if (event.getLocation()!= null && event.getLocation().length() > 0) {
             locationContainer.setVisibility(View.VISIBLE);
             txtLocation.setText(event.getLocation());
         } else {

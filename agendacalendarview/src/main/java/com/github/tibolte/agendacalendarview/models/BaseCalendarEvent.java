@@ -158,6 +158,7 @@ public class BaseCalendarEvent implements CalendarEvent {
         this.mDuration = calendarEvent.getDuration();
         this.mTitle = calendarEvent.getTitle();
         this.mDescription = calendarEvent.getDescription();
+        this.mRrule = calendarEvent.getRrule();
         this.mLocation = calendarEvent.getLocation();
         this.mStartTime = new GregorianCalendar();
         this.mStartTime.setTime(calendarEvent.getStartTime().getTime());

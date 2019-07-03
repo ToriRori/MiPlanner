@@ -85,8 +85,7 @@ public class EditEventActivity extends AppCompatActivity {
                 final String selectedStart = dpStart.getDayOfMonth() + "." + (dpStart.getMonth() + 1) + "." + dpStart.getYear() + " " + tpStart.getHour() + ":" + tpStart.getMinute();
                 final String selectdEnd = dpEnd.getDayOfMonth() + "." + (dpEnd.getMonth() + 1) + "." + dpEnd.getYear() + " " + tpEnd.getHour() + ":" + tpEnd.getMinute();
 
-                Bundle bundle = getIntent().getExtras();
-                String rrule = bundle.getString("rrule");
+                String rrule = getRrule();
 
                 //check dates correct
                 SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
@@ -109,7 +108,7 @@ public class EditEventActivity extends AppCompatActivity {
                     temp.setTime(calStart.getTime());
                     RRule rule = null;
                     try {
-                        rule = new RRule("RRULE:"+bundle.getString("rrule"));
+                        rule = new RRule("RRULE:"+rrule);
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
@@ -204,7 +203,7 @@ public class EditEventActivity extends AppCompatActivity {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-            if (rule != null && rule.getCount() == 1)
+            if (rule != null)
                 repeatbtn.setText("Не повторяется");
             else if (rule.getCount() == 0 && rule.getUntil() == null) {
                 if (rule.getFreq() == Frequency.DAILY && rule.getInterval() == 1)
@@ -327,6 +326,34 @@ public class EditEventActivity extends AppCompatActivity {
         }
     };
 
+    public String getRrule() {
+        String rrule = "";
+        final Button repeatbtn = findViewById(R.id.buttonRepeat);
+        switch (repeatbtn.getText().toString()) {
+            case "Не повторяеся":
+                rrule = "FREQ=DAILY;INTERVAL=7;COUNT=1;";
+                break;
+            case "Каждый день":
+                rrule = "FREQ=DAILY;INTERVAL=1;";
+                break;
+            case "Каждую неделю":
+                rrule = "FREQ=WEEKLY;INTERVAL=1;";
+                break;
+            case "Каждый месяц":
+                rrule = "FREQ=MONTHLY;INTERVAL=1;";
+                break;
+            case "Каждый год":
+                rrule = "FREQ=YEARLY;INTERVAL =1;";
+                break;
+            case "Другое...":
+                Bundle bundle = getIntent().getExtras();
+                rrule = bundle.getString("rrule");
+                break;
+        }
+        return rrule;
+    }
+
+
     public void requestForEdit(final String mRrule) {
         final TimePicker tpStart = findViewById(R.id.timePickerStart);
         final DatePicker dpStart = findViewById(R.id.datePickerStart);
@@ -367,7 +394,21 @@ public class EditEventActivity extends AppCompatActivity {
                             @Override
                             public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                                 List<DatumPatterns> patts = Arrays.asList(response.body().getData());
-                                DatumPatterns datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                                DatumPatterns datP;
+                                if (mRrule!=null) {
+                                    RRule r = null;
+                                    try {
+                                        r = new RRule("RRULE:"+mRrule);
+                                    } catch (ParseException e) {
+                                        e.printStackTrace();
+                                    }
+                                    if (r.getUntil() == null && r.getCount() == 0)
+                                        datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                                    else
+                                        datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                                }
+                                else
+                                    datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
                                 retrofitClient.getEventPatternRepository().update(patts.get(0).getId(),datP, tokenID).enqueue(new Callback<Patterns>() {
                                     @Override
                                     public void onResponse(Call<Patterns> call, Response<Patterns> response) {

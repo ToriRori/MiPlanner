@@ -263,9 +263,9 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.calendar) {
             fragmentClass = CalendarController.class;
-        }/* else if (id == R.id.nav_gallery) {
-            fragmentClass = WeekController.class;
-        } else if (id == R.id.nav_slideshow) {
+        }/* else if (id == R.id.tasks) {
+            fragmentClass = InfoEventActivity.class;
+        }/* else if (id == R.id.nav_slideshow) {
             fragmentClass = MonthController.class;
         }*/
 

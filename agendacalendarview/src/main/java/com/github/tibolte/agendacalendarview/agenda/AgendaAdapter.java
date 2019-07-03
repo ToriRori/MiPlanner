@@ -1,5 +1,6 @@
 package com.github.tibolte.agendacalendarview.agenda;
 
+import com.github.tibolte.agendacalendarview.R;
 import com.github.tibolte.agendacalendarview.models.BaseCalendarEvent;
 import com.github.tibolte.agendacalendarview.models.CalendarEvent;
 import com.github.tibolte.agendacalendarview.render.DefaultEventRenderer;
@@ -12,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import se.emilsjolander.stickylistheaders.StickyListHeadersAdapter;

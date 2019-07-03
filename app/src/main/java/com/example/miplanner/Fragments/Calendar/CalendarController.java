@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import com.example.miplanner.Activities.AddEventActivity;
 import com.example.miplanner.Activities.EditEventActivity;
+import com.example.miplanner.Activities.InfoEvent.InfoEventActivity;
 import com.example.miplanner.Data.CalendarDbHelper;
 import com.example.miplanner.Fragments.OnSwipeTouchListener;
 import com.example.miplanner.POJO.DatumEvents;
@@ -27,6 +28,7 @@ import com.example.miplanner.R;
 import com.example.miplanner.RetrofitClient;
 import com.github.tibolte.agendacalendarview.AgendaCalendarView;
 import com.github.tibolte.agendacalendarview.CalendarPickerController;
+import com.github.tibolte.agendacalendarview.models.BaseCalendarEvent;
 import com.github.tibolte.agendacalendarview.models.CalendarEvent;
 import com.github.tibolte.agendacalendarview.models.DayItem;
 import com.google.firebase.auth.FirebaseAuth;
@@ -264,7 +266,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     Calendar cal2 = new GregorianCalendar();
                     cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
                     cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
-                    String rrule = "RRULE:"+patt.get(0).getRrule();
+                    String rrule = patt.get(0).getRrule();
                     DrawableCalendarEvent event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
                             evs.getName(), evs.getDetails(), evs.getLocation(), rrule, cal1, cal2, false, null);
                     eventList.add(event);
@@ -304,85 +306,22 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     @Override
     public void onEventSelected(final CalendarEvent event) {
         if (!event.getTitle().equals("No events")) {
-            LayoutInflater layoutInflater
-                    = (LayoutInflater)getActivity()
-                    .getSystemService(LAYOUT_INFLATER_SERVICE);
-            View popupView = layoutInflater.inflate(R.layout.event_info, null);
-            final PopupWindow popupWindow = new PopupWindow(
-                    popupView,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, true);
+            Intent intent = new Intent(getActivity(), InfoEventActivity.class);
+            Bundle bundle = new Bundle();
 
-            TextView txtTitle = popupView.findViewById(R.id.event_title);
-            final TextView txtDate1 = popupView.findViewById(R.id.event_date1);
-            final TextView txtDate2 = popupView.findViewById(R.id.event_date2);
-            final TextView txtDescription = popupView.findViewById(R.id.event_description);
-            final LinearLayout layoutLocation = popupView.findViewById(R.id.location_layout);
-            final TextView txtLocation = popupView.findViewById(R.id.event_location);
+            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-            txtTitle.setText(event.getTitle());
+            bundle.putString("name", event.getTitle());
+            bundle.putString("description", event.getDescription());
+            bundle.putString("location", event.getLocation());
+            bundle.putString("time_start", format.format(event.getStartTime().getTime()));
+            bundle.putString("time_end",format.format(event.getEndTime().getTimeInMillis()));
+            bundle.putString("rrule", event.getRrule());
+            bundle.putLong("event_id", event.getId());
 
-            //Event ev_real = mDbHelper.getEventById((int) event.getId());
-
-            Calendar cal1 = new GregorianCalendar();
-            Calendar cal2 = new GregorianCalendar();
-            cal1.setTime(event.getStartTime().getTime());
-            cal2.setTime(event.getEndTime().getTime());
-
-            SimpleDateFormat format1 = new SimpleDateFormat("dd.MM.yyyy");
-            SimpleDateFormat format2 = new SimpleDateFormat("HH:mm");
-            txtDate1.setText("Начало события: " + format1.format(cal1.getTime()) + "  " + format2.format(cal1.getTime()));
-            txtDate2.setText("Конец события: " + format1.format(cal2.getTime()) + "  " + format2.format(cal2.getTime()));
-
-            DrawableCalendarEvent temp = (DrawableCalendarEvent) event;
-            txtDescription.setText(((DrawableCalendarEvent)event).getDescription());
-            if (temp.getLocation() != null) {
-                txtLocation.setText(temp.getLocation());
-                if (temp.getLocation().length() > 0) {
-                    layoutLocation.setVisibility(View.VISIBLE);
-                    txtLocation.setText(temp.getLocation());
-                } else {
-                    layoutLocation.setVisibility(View.GONE);
-                }
-            }
-
-            /*SimpleDateFormat format = new SimpleDateFormat("d.MM.yyyy HH:mm");
-            Calendar cal1 = new GregorianCalendar();
-            Calendar cal2 = new GregorianCalendar();
-
-            try {
-                cal1.setTime(format.parse(ev_real.getDateStart()));
-                cal2.setTime(format.parse(ev_real.getDateEnd()));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-
-            SimpleDateFormat format1 = new SimpleDateFormat("dd.MM.yyyy");
-            SimpleDateFormat format2 = new SimpleDateFormat("HH:mm");
-            txtDate1.setText("Начало события: " + format1.format(cal1.getTime()) + "  " + format2.format(cal1.getTime()));
-            txtDate2.setText("Конец события: " + format1.format(cal2.getTime()) + "  " + format2.format(cal2.getTime()));
-
-            DrawableCalendarEvent temp = (DrawableCalendarEvent) event;
-            txtDescription.setText(((DrawableCalendarEvent)event).getDescription());
-            if (temp.getLocation() != null) {
-                txtLocation.setText(temp.getLocation());
-                if (temp.getLocation().length() > 0) {
-                    layoutLocation.setVisibility(View.VISIBLE);
-                    txtLocation.setText(temp.getLocation());
-                } else {
-                    layoutLocation.setVisibility(View.GONE);
-                }
-            }*/
-
-
-            Button btnDismiss = popupView.findViewById(R.id.dismiss);
-            btnDismiss.setOnClickListener(new Button.OnClickListener(){
-                @Override
-                public void onClick(View v) {
-                    // TODO Auto-generated method stub
-                    popupWindow.dismiss();
-                }});
-            popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
+            intent.putExtras(bundle);
+            startActivity(intent);
+            getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
         }
         else {
             Intent intent = new Intent(getActivity(), AddEventActivity.class);

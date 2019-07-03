@@ -38,5 +38,9 @@ public interface CalendarEvent {
 
     CalendarEvent copy();
 
+    String getDescription();
+
+    String getLocation();
+
     String getRrule();
 }
