@@ -50,10 +50,10 @@ public class DrawableEventRenderer extends EventRenderer<DrawableCalendarEvent> 
         if (event.getTitle().equals(view.getResources().getString(com.github.tibolte.agendacalendarview.R.string.agenda_event_no_events))) {
             txtTitle.setTextColor(view.getResources().getColor(android.R.color.black));
         } else {
-            txtTitle.setTextColor(view.getResources().getColor(com.github.tibolte.agendacalendarview.R.color.theme_text_icons));
+            txtTitle.setTextColor(view.getResources().getColor(com.github.tibolte.agendacalendarview.R.color.theme_primary));
         }
         descriptionContainer.setBackgroundColor(event.getColor());
-        txtLocation.setTextColor(view.getResources().getColor(com.github.tibolte.agendacalendarview.R.color.theme_text_icons));
+        txtLocation.setTextColor(view.getResources().getColor(com.github.tibolte.agendacalendarview.R.color.theme_primary));
     }
 
     @Override

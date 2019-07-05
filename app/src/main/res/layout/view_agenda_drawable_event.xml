@@ -19,14 +19,15 @@
             android:id="@+id/view_agenda_event_time"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textColor="@android:color/black"
+            android:textColor="@color/text"
+            android:textStyle="bold"
             android:textSize="16dp"/>
 
         <TextView
             android:id="@+id/view_agenda_event_title"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textColor="@android:color/black"
+            android:textColor="@color/text"
             android:textSize="16dp"/>
 
         <LinearLayout
@@ -48,7 +49,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"
-                android:textColor="@color/calendar_text_default"
+                android:textColor="@color/text"
                 android:textSize="11dp"/>
 
         </LinearLayout>
