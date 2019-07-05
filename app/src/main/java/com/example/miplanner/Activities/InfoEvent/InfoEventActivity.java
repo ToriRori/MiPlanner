@@ -219,7 +219,7 @@ public class InfoEventActivity extends AppCompatActivity {
         Bundle bundle = getIntent().getExtras();
         String name = bundle.getString("name");
         String descr = bundle.getString("description");
-        String location = bundle.getString("locatiion");
+        String location = bundle.getString("location");
         String startTime = bundle.getString("time_start");
         String endTime = bundle.getString("time_end");
         String rrule = bundle.getString("rrule");
@@ -257,7 +257,7 @@ public class InfoEventActivity extends AppCompatActivity {
         }
         LocalDateTime dateStart = LocalDateTime.of(calStart.get(Calendar.YEAR), calStart.get(Calendar.MONTH), calStart.get(Calendar.DAY_OF_MONTH), calStart.get(Calendar.HOUR_OF_DAY), calStart.get(Calendar.MINUTE));
         LocalDateTime dateEnd = LocalDateTime.of(calEnd.get(Calendar.YEAR), calEnd.get(Calendar.MONTH), calEnd.get(Calendar.DAY_OF_MONTH), calEnd.get(Calendar.HOUR_OF_DAY), calEnd.get(Calendar.MINUTE));
-        Period p = Period.between(dateEnd.toLocalDate(), dateStart.toLocalDate());
+        Period p = Period.between(dateStart.toLocalDate(), dateEnd.toLocalDate());
         String res = "";
         if (Math.abs(p.getYears()) != 0) {
             if (Math.abs(p.getYears()) == 1)
@@ -275,21 +275,39 @@ public class InfoEventActivity extends AppCompatActivity {
             else
                 res += Math.abs(p.getMonths()) + " месяцев ";
         }
-        if (Math.abs(p.getDays()) != 0) {
-            if (Math.abs(p.getDays()) == 1)
-                res += Math.abs(p.getDays()) + " день ";
-            else if (Math.abs(p.getDays()) < 5)
-                res += Math.abs(p.getDays()) + " дня ";
+        int add = 0;
+        if (dateStart.getDayOfMonth()+1 == dateEnd.getDayOfMonth() && dateStart.getMonth() == dateEnd.getMonth() && dateStart.getYear() == dateEnd.getYear())
+            add = -1;
+        if (Math.abs(p.getDays()+add) != 0) {
+            if (Math.abs(p.getDays()+add) == 1)
+                res += Math.abs(p.getDays()+add) + " день ";
+            else if (Math.abs(p.getDays()+add) < 5)
+                res += Math.abs(p.getDays()+add) + " дня ";
             else
-                res += Math.abs(p.getDays()) + " дней ";
+                res += Math.abs(p.getDays()+add) + " дней ";
         }
-        if (dateEnd.getHour()-dateStart.getHour() != 0) {
-            if (Math.abs(dateEnd.getHour()-dateStart.getHour()) == 1)
-                res += Math.abs(dateEnd.getHour()-dateStart.getHour()) + " час ";
-            else if (Math.abs(dateEnd.getHour()-dateStart.getHour()) < 5)
-                res += Math.abs(dateEnd.getHour()-dateStart.getHour()) + " часа ";
-            else
-                res += Math.abs(dateEnd.getHour()-dateStart.getHour()) + " часов ";
+
+        if (dateStart.getDayOfMonth()+1 == dateEnd.getDayOfMonth() && dateStart.getMonth() == dateEnd.getMonth() && dateStart.getYear() == dateEnd.getYear()){
+            add = 24;
+            if (add+dateEnd.getHour() - dateStart.getHour() != 0) {
+                if (Math.abs(add+dateEnd.getHour() - dateStart.getHour()) == 1)
+                    res += Math.abs(add+dateEnd.getHour() - dateStart.getHour()) + " час ";
+                else if (Math.abs(add+dateEnd.getHour() - dateStart.getHour()) < 5)
+                    res += Math.abs(add+dateEnd.getHour() - dateStart.getHour()) + " часа ";
+                else
+                    res += Math.abs(add+dateEnd.getHour() - dateStart.getHour()) + " часов ";
+            }
+
+        }
+        else {
+            if (dateEnd.getHour() - dateStart.getHour() != 0) {
+                if (Math.abs(dateEnd.getHour() - dateStart.getHour()) == 1)
+                    res += Math.abs(dateEnd.getHour() - dateStart.getHour()) + " час ";
+                else if (Math.abs(dateEnd.getHour() - dateStart.getHour()) < 5)
+                    res += Math.abs(dateEnd.getHour() - dateStart.getHour()) + " часа ";
+                else
+                    res += Math.abs(dateEnd.getHour() - dateStart.getHour()) + " часов ";
+            }
         }
         if (Math.abs(dateEnd.getMinute()-dateStart.getMinute()) != 0) {
             if (Math.abs(dateEnd.getMinute()-dateStart.getMinute()) == 1)

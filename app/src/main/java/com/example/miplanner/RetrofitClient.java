@@ -3,6 +3,7 @@ package com.example.miplanner;
 import com.example.miplanner.API.ApiEvents;
 import com.example.miplanner.API.ApiPatterns;
 import com.example.miplanner.API.ApiTasks;
+import com.example.miplanner.API.ApiTransfers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -51,5 +52,7 @@ public class RetrofitClient {
     }
 
     public ApiTasks getTasksRepository() {  return retrofit.create(ApiTasks.class); }
+
+    public ApiTransfers getTransfersRepository() {  return retrofit.create(ApiTransfers.class);  }
 }
 

@@ -58,6 +58,11 @@ public class AddTaskActivity extends AppCompatActivity {
 
                 nameTask.clearFocus();
 
+                if (nameTask.getText().toString().replaceAll("[\\s\\d]", "").length() <= 0) {
+                    Toast.makeText(AddTaskActivity.this, "Название события не корректно", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 Calendar cal = new GregorianCalendar();
                 SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
                 try {

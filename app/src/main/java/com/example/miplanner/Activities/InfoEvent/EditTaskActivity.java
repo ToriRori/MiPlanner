@@ -9,6 +9,7 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import com.example.miplanner.POJO.DatumTasks;
 import com.example.miplanner.POJO.Events;
@@ -53,10 +54,15 @@ public class EditTaskActivity extends AppCompatActivity {
 
                 nameTask.clearFocus();
 
+                if (nameTask.getText().toString().replaceAll("[\\s\\d]", "").length() <= 0) {
+                    Toast.makeText(EditTaskActivity.this, "Название события не корректно", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 Calendar cal = new GregorianCalendar();
                 SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
                 try {
-                    cal.setTime(format.parse(dpEnd.getDayOfMonth()+"."+dpEnd.getMonth()+1+"."+dpEnd.getYear()+" "+
+                    cal.setTime(format.parse(dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+
                             tpEnd.getHour()+":"+tpEnd.getMinute()));
                 } catch (ParseException e) {
                     e.printStackTrace();
@@ -120,7 +126,7 @@ public class EditTaskActivity extends AppCompatActivity {
 
         tpEnd.setIs24HourView(true);
 
-        dpEnd.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DAY_OF_MONTH),null);
+        dpEnd.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH),null);
         tpEnd.setHour(cal.get(Calendar.HOUR_OF_DAY));
         tpEnd.setMinute(cal.get(Calendar.MINUTE));
     }

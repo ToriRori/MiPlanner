@@ -138,7 +138,7 @@ public class AddEventActivity extends AppCompatActivity {
         String rrule = "";
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
         switch (repeatbtn.getText().toString()) {
-            case "Не повторяеся":
+            case "Не повторяется":
                 rrule = null;
                 break;
             case "Каждый день":
