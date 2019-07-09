@@ -394,14 +394,14 @@ public class AddEventActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                             if (r.getUntil() == null && r.getCount() == 0)
-                                datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", rule,calStart.getTimeInMillis(), "Asia/Vladivostok");
+                                datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", rule,calStart.getTimeInMillis(), TimeZone.getDefault().getID());
                             else {
                                 Calendar calendarEnd = getEnd(calEnd, r);
-                                datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), calendarEnd.getTimeInMillis(), "", rule, calStart.getTimeInMillis(), "Asia/Vladivostok");
+                                datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), calendarEnd.getTimeInMillis(), "", rule, calStart.getTimeInMillis(), TimeZone.getDefault().getID());
                             }
                         }
                         else
-                            datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", null,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                            datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", null,calStart.getTimeInMillis(),TimeZone.getDefault().getID());
                         retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP,tokenID).enqueue(new Callback<Patterns>() {
                             @Override
                             public void onResponse(Call<Patterns> call, Response<Patterns> response) {

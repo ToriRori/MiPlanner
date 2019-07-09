@@ -50,6 +50,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -57,6 +58,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -371,8 +373,12 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     patt = Arrays.asList(response.body().getData());
                     Calendar cal1 = new GregorianCalendar();
                     Calendar cal2 = new GregorianCalendar();
+                    cal1.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
+                    cal2.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
                     cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
                     cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
+                    cal1.setTimeZone(TimeZone.getDefault());
+                    cal2.setTimeZone(TimeZone.getDefault());
                     String rrule = patt.get(0).getRrule();
                     DrawableCalendarEvent event;
                     if (!evs.getOwnerId().equals(mAuth.getCurrentUser().getUid()))
@@ -393,6 +399,12 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     Calendar cal2 = new GregorianCalendar();
                     cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
                     cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
+                    cal1.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
+                    cal2.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
+                    cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
+                    cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
+                    cal1.setTimeZone(TimeZone.getDefault());
+                    cal2.setTimeZone(TimeZone.getDefault());
                     DrawableCalendarEvent event;
                     if (!evs.getOwnerId().equals(mAuth.getCurrentUser().getUid()))
                         event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.theme_accent),

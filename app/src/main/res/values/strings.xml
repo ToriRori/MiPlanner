@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MiPlanner</string>
+    <string name="server_client_id">683480740903-atpdqv9v1sk69uimo07gcjj5jgq55pf5.apps.googleusercontent.com</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
