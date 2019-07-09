@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/calendar_future_days_bg">
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:foregroundGravity="center"
+        android:layout_gravity="center"/>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -21,7 +29,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Название задачи"
-                android:textColor="@color/blue_dark"/>
+                android:textColor="@color/theme_primary"/>
 
             <EditText
                 android:id="@+id/nameText"
@@ -30,7 +38,7 @@
                 android:layout_below="@+id/textView4"
                 android:layout_alignParentTop="true"
                 android:layout_marginTop="22dp"
-                android:textColor="@color/blue_dark"
+                android:textColor="@color/theme_primary"
                 android:shadowColor="@color/calendar_text_current_day"
                 android:outlineSpotShadowColor="@color/calendar_text_current_day"
                 android:outlineAmbientShadowColor="@color/calendar_text_current_day" />
@@ -43,7 +51,7 @@
                 android:layout_below="@+id/nameText"
                 android:layout_marginTop="2dp"
                 android:text="Дата крайнего срока"
-                android:textColor="@color/blue_dark"/>
+                android:textColor="@color/theme_primary"/>
 
             <DatePicker
                 android:id="@+id/datePickerEnd"
@@ -54,7 +62,7 @@
                 android:calendarViewShown="false"
                 android:datePickerMode="spinner"
                 tools:datePickerMode="spinner"
-                android:calendarTextColor="@color/blue_dark"
+                android:textColor="@color/theme_primary"
                 android:outlineAmbientShadowColor="@color/calendar_text_current_day"/>
 
             <TextView
@@ -64,7 +72,7 @@
                 android:layout_below="@+id/datePickerStart"
                 android:layout_marginTop="5dp"
                 android:text="Время крайнего срока"
-                android:textColor="@color/blue_dark"/>
+                android:textColor="@color/theme_primary"/>
 
             <TimePicker
                 android:id="@+id/timePickerEnd"
@@ -75,7 +83,7 @@
                 android:layout_marginTop="3dp"
                 android:layout_marginEnd="0dp"
                 android:timePickerMode="spinner"
-                android:amPmTextColor="@color/blue_dark"
+                android:textColor="@color/theme_primary"
                 android:outlineAmbientShadowColor="@color/calendar_text_current_day"/>
 
             <Button
@@ -83,6 +91,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:textColor="@color/theme_primary"
+                android:background="@drawable/corners5"
+                android:paddingRight="10dp"
+                android:paddingLeft="10dp"
                 android:layout_alignBottom="@+id/buttonRepeat"
                 android:text="Редактировать задачу" />
 
@@ -90,4 +102,4 @@
 
     </ScrollView>
 
-</RelativeLayout>
+</FrameLayout>

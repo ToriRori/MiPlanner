@@ -4,7 +4,9 @@ package com.example.miplanner.POJO;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class DatumEventsInstances {
+import java.io.Serializable;
+
+public class DatumEventsInstances implements Serializable {
 
     @Expose
     @SerializedName("started_at")

@@ -13,21 +13,10 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
             <Button
-                android:id="@+id/edit_btn"
-                android:layout_width="120dp"
-                android:layout_margin="5dp"
-                android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
-                android:textColor="@color/theme_primary"
-                android:background="@drawable/corners5"
-                android:text="Изменить"/>
-
-            <Button
                 android:id="@+id/delete_btn"
                 android:layout_width="120dp"
                 android:layout_margin="5dp"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/edit_btn"
                 android:layout_centerHorizontal="true"
                 android:background="@drawable/corners5"
                 android:textColor="@color/theme_primary"

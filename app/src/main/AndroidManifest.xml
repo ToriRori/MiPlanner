@@ -11,35 +11,36 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Activities.RepeatEventActivity"></activity>
+        <activity android:name=".Activities.ShareActivity"></activity>
+        <activity android:name=".Activities.Event.RepeatEventActivity" />
         <activity android:name=".Activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".Activities.AddEventActivity"
+            android:name=".Activities.Event.AddEventActivity"
             android:theme="@style/Theme.AppCompat.Translucent"
             android:windowSoftInputMode="stateHidden" />
         <activity
-            android:name=".Activities.EditEventActivity"
+            android:name=".Activities.Event.EditEventActivity"
             android:theme="@style/Theme.AppCompat.Translucent"
             android:windowSoftInputMode="stateHidden" />
         <activity
-            android:name=".Activities.InfoEvent.InfoEventActivity"
+            android:name=".Activities.InfoTask.InfoEventActivity"
             android:theme="@style/Theme.AppCompat.Translucent" />
         <activity
-            android:name=".Activities.InfoEvent.AddTaskActivity"
+            android:name=".Activities.InfoTask.AddTaskActivity"
             android:theme="@style/Theme.AppCompat.Translucent"
-            android:windowSoftInputMode="stateHidden"/>
+            android:windowSoftInputMode="stateHidden" />
         <activity
-            android:name=".Activities.InfoEvent.EditTaskActivity"
+            android:name=".Activities.InfoTask.EditTaskActivity"
             android:theme="@style/Theme.AppCompat.Translucent"
-            android:windowSoftInputMode="stateHidden"/>
+            android:windowSoftInputMode="stateHidden" />
     </application>
 
 </manifest>

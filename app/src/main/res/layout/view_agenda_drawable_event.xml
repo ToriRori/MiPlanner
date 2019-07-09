@@ -28,7 +28,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:textColor="@color/text"
-            android:textSize="16dp"/>
+            android:textSize="16dp"
+            android:maxLines="1"/>
 
         <LinearLayout
             android:id="@+id/view_agenda_event_location_container"
@@ -50,6 +51,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"
                 android:textColor="@color/text"
+                android:maxLines="1"
                 android:textSize="11dp"/>
 
         </LinearLayout>

@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/white"
     android:id="@+id/linLayout">
 
     <LinearLayout
@@ -18,11 +19,19 @@
             android:id="@+id/button_export"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_marginLeft="1dp"
-            android:layout_weight="2"
+            android:layout_weight="0.5"
             android:background="@drawable/corners4"
             android:stateListAnimator="@null"
             android:src="@drawable/ic_export"/>
+
+        <ImageButton
+            android:id="@+id/button_share"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_weight="0.5"
+            android:background="@drawable/corners4"
+            android:stateListAnimator="@null"
+            android:src="@drawable/ic_share"/>
 
         <TextView
             android:id="@+id/year_text"
@@ -38,7 +47,7 @@
             android:id="@+id/button_add"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_weight="2"
+            android:layout_weight="2.2"
             android:textSize="22dp"
             android:stateListAnimator="@null"
             android:textColor="@color/theme_primary"
@@ -46,6 +55,7 @@
             android:text="+" />
 
     </LinearLayout>
+
 
     <com.github.tibolte.agendacalendarview.AgendaCalendarView
         android:id="@+id/agenda_calendar_view"
@@ -57,7 +67,16 @@
         agendaCalendar:calendarDayTextColor="@color/theme_primary"
         agendaCalendar:calendarHeaderColor="@color/theme_primary_dark"
         agendaCalendar:calendarPastDayTextColor="@android:color/darker_gray"
-        agendaCalendar:fabColor="@color/theme_accent">
+        agendaCalendar:fabColor="@color/theme_accent"
+        >
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:foregroundGravity="center"/>
 
     </com.github.tibolte.agendacalendarview.AgendaCalendarView>
 

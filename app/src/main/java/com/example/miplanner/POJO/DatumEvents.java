@@ -4,7 +4,9 @@ package com.example.miplanner.POJO;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class DatumEvents {
+import java.io.Serializable;
+
+public class DatumEvents implements Serializable {
 
     @Expose
     private Long id;

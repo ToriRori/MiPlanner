@@ -4,7 +4,11 @@ package com.example.miplanner.POJO;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class DatumPermissions {
+import java.io.Serializable;
+
+import scala.util.parsing.combinator.testing.Str;
+
+public class DatumPermissions implements Serializable {
 
     @Expose
     private Long id;
@@ -17,7 +21,7 @@ public class DatumPermissions {
     private Long updatedAt;
 
     @Expose
-    private Long user_id;
+    private String user_id;
     @Expose
     private Long entity_id;
     @Expose
@@ -27,7 +31,7 @@ public class DatumPermissions {
     public DatumPermissions() {
     }
 
-    public DatumPermissions(Long user_id, Long entity_id, String name) {
+    public DatumPermissions(String user_id, Long entity_id, String name) {
         this.user_id = user_id;
         this.entity_id = entity_id;
         this.name = name;
@@ -49,11 +53,11 @@ public class DatumPermissions {
         return updatedAt;
     }
 
-    public Long getUser_id() {
+    public String getUser_id() {
         return user_id;
     }
 
-    public void setUser_id(long user_id) {
+    public void setUser_id(String user_id) {
         this.user_id = user_id;
     }
 

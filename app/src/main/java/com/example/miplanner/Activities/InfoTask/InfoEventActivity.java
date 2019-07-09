@@ -1,4 +1,4 @@
-package com.example.miplanner.Activities.InfoEvent;
+package com.example.miplanner.Activities.InfoTask;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,6 +14,7 @@ import android.widget.ImageButton;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
@@ -32,7 +33,6 @@ import com.google.ical.values.RRule;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
@@ -51,8 +51,10 @@ public class InfoEventActivity extends AppCompatActivity {
     private CalendarDbHelper mDbHelper;
 
     String tokenID = null;
-
+    ProgressBar progressBar;
     FirebaseAuth mAuth;
+
+    Long event_id;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,14 +63,130 @@ public class InfoEventActivity extends AppCompatActivity {
         final Bundle bundle = getIntent().getExtras();
         mAuth = FirebaseAuth.getInstance();
         tokenID = bundle.getString("token");
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.VISIBLE);
+
+        event_id = bundle.getLong("event_id");
 
         initFields();
 
-        final Long event_id = bundle.getLong("event_id");
+        loadTasks();
 
         final ListView tasksList = findViewById(R.id.tasks_list);
-        final ArrayList<TasksMap> list = new ArrayList<>();
 
+        tasksList.setOnItemLongClickListener(tasksAdapter);
+
+        Button btn_add = findViewById(R.id.button_add);
+        btn_add.setOnClickListener(addTaskListener);
+
+        ImageButton btn_back = findViewById(R.id.button_back);
+        btn_back.setOnClickListener(backListener);
+    }
+
+    AdapterView.OnItemLongClickListener tasksAdapter = new AdapterView.OnItemLongClickListener() {
+        @Override
+        public boolean onItemLongClick(final AdapterView<?> parent, View view, final int position, long id) {
+            LayoutInflater layoutInflater
+                    = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+            View popupView = layoutInflater.inflate(R.layout.event_actions, null);
+            final PopupWindow popupWindow = new PopupWindow(
+                    popupView,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, true);
+            final Button btnEdit = popupView.findViewById(R.id.edit_btn);
+            btnEdit.setOnClickListener(new Button.OnClickListener(){
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(InfoEventActivity.this, EditTaskActivity.class);
+                    Bundle bundle = getIntent().getExtras();
+                    Bundle bundle1 = new Bundle();
+                    HashMap<String, String> hm = (HashMap<String, String>) parent.getItemAtPosition(position);
+
+                    bundle1.putString("task_name", hm.get("name"));
+                    bundle1.putString("task_time", hm.get("time"));
+                    bundle1.putString("task_id", hm.get("id"));
+                    bundle1.putString("name", bundle.getString("name"));
+                    bundle1.putString("description", bundle.getString("description"));
+                    bundle1.putString("location", bundle.getString("locatiion"));
+                    bundle1.putString("time_start", bundle.getString("time_start"));
+                    bundle1.putString("time_end", bundle.getString("time_end"));
+                    bundle1.putString("rrule", bundle.getString("rrule"));
+                    bundle1.putString("time_end_current", bundle.getString("time_end_current"));
+                    bundle1.putLong("event_id", event_id);
+
+                    intent.putExtras(bundle1);
+                    startActivity(intent);
+                    overridePendingTransition (R.anim.enter, R.anim.exit);
+                }});
+            Button btnDelete = popupView.findViewById(R.id.delete_btn);
+            btnDelete.setOnClickListener(new Button.OnClickListener(){
+                @Override
+                public void onClick(View v) {
+                    //mDbHelper.deleteEventById((int) event.getId());
+                    progressBar.setVisibility(View.VISIBLE);
+                    RetrofitClient retrofitClient = RetrofitClient.getInstance();
+                    HashMap<String, String> hm = (HashMap<String, String>) parent.getItemAtPosition(position);
+                    retrofitClient.getTasksRepository().delete(Long.parseLong(hm.get("id")),tokenID).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            Intent intent = getIntent();
+                            finish();
+                            startActivity(intent);
+                            overridePendingTransition (R.anim.enter, R.anim.exit);
+                        }
+
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+
+                        }
+                    });
+                }});
+            popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
+            return true;
+        }
+    };
+
+    View.OnClickListener backListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent(InfoEventActivity.this, MainActivity.class);
+            Bundle bundle = new Bundle();
+            Calendar cal = new GregorianCalendar();
+            DateFormat dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
+            bundle.putString("Date", dateFormat.format(cal.getTime()));
+            dateFormat = new SimpleDateFormat("HH");
+            bundle.putString("token", tokenID);
+            intent.putExtras(bundle);
+
+            startActivity(intent);
+            overridePendingTransition (R.anim.enter, R.anim.exit);
+        }
+    };
+
+    View.OnClickListener addTaskListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent(InfoEventActivity.this, AddTaskActivity.class);
+            Bundle bundle = getIntent().getExtras();
+            Bundle bundle1 = new Bundle();
+            bundle1.putString("name", bundle.getString("name"));
+            bundle1.putString("description", bundle.getString("description"));
+            bundle1.putString("location", bundle.getString("locatiion"));
+            bundle1.putString("time_start", bundle.getString("time_start"));
+            bundle1.putString("time_end", bundle.getString("time_end"));
+            bundle1.putString("rrule", bundle.getString("rrule"));
+            bundle1.putString("time_end_current", bundle.getString("time_end_current"));
+            bundle1.putLong("event_id", event_id);
+            intent.putExtras(bundle);
+            startActivity(intent);
+            overridePendingTransition (R.anim.enter, R.anim.exit);
+
+        }
+    };
+
+    public void loadTasks() {
+        final ListView tasksList = findViewById(R.id.tasks_list);
+        final ArrayList<TasksMap> list = new ArrayList<>();
         mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
             @Override
             public void onComplete(@NonNull final Task<GetTokenResult> task) {
@@ -94,6 +212,7 @@ public class InfoEventActivity extends AppCompatActivity {
                         else {
                             title.setText("Нет задач");
                         }
+                        progressBar.setVisibility(View.GONE);
 
                     }
 
@@ -102,116 +221,6 @@ public class InfoEventActivity extends AppCompatActivity {
 
                     }
                 });
-            }
-        });
-
-        tasksList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(final AdapterView<?> parent, View view, final int position, long id) {
-                LayoutInflater layoutInflater
-                        = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-                View popupView = layoutInflater.inflate(R.layout.event_actions, null);
-                final PopupWindow popupWindow = new PopupWindow(
-                        popupView,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT, true);
-                final Button btnEdit = popupView.findViewById(R.id.edit_btn);
-                btnEdit.setOnClickListener(new Button.OnClickListener(){
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(InfoEventActivity.this, EditTaskActivity.class);
-                        Bundle bundle = getIntent().getExtras();
-                        Bundle bundle1 = new Bundle();
-                        HashMap<String, String> hm = (HashMap<String, String>) parent.getItemAtPosition(position);
-
-                        bundle1.putString("task_name", hm.get("name"));
-                        bundle1.putString("task_time", hm.get("time"));
-                        bundle1.putString("task_id", hm.get("id"));
-                        bundle1.putString("name", bundle.getString("name"));
-                        bundle1.putString("description", bundle.getString("description"));
-                        bundle1.putString("location", bundle.getString("locatiion"));
-                        bundle1.putString("time_start", bundle.getString("time_start"));
-                        bundle1.putString("time_end", bundle.getString("time_end"));
-                        bundle1.putString("rrule", bundle.getString("rrule"));
-                        bundle1.putLong("event_id", event_id);
-
-                        intent.putExtras(bundle1);
-                        startActivity(intent);
-                        overridePendingTransition (R.anim.enter, R.anim.exit);
-                    }});
-                Button btnDelete = popupView.findViewById(R.id.delete_btn);
-                btnDelete.setOnClickListener(new Button.OnClickListener(){
-                    @Override
-                    public void onClick(View v) {
-                        //mDbHelper.deleteEventById((int) event.getId());
-                        RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                        HashMap<String, String> hm = (HashMap<String, String>) parent.getItemAtPosition(position);
-                        retrofitClient.getTasksRepository().delete(Long.parseLong(hm.get("id")),tokenID).enqueue(new Callback<Void>() {
-                            @Override
-                            public void onResponse(Call<Void> call, Response<Void> response) {
-                                Intent intent = getIntent();
-                                finish();
-                                startActivity(intent);
-                                overridePendingTransition (R.anim.enter, R.anim.exit);
-                                /*Bundle bundle1 = new Bundle();
-                                bundle1.putString("name", bundle.getString("name"));
-                                bundle1.putString("description", bundle.getString("description"));
-                                bundle1.putString("location", bundle.getString("locatiion"));
-                                bundle1.putString("time_start", bundle.getString("time_start"));
-                                bundle1.putString("time_end", bundle.getString("time_end"));
-                                bundle1.putString("rrule", bundle.getString("rrule"));
-
-                                intent.putExtras(bundle1);
-                                startActivity(intent);
-                                finish();*/
-                            }
-
-                            @Override
-                            public void onFailure(Call<Void> call, Throwable t) {
-
-                            }
-                        });
-                    }});
-                popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
-                return true;
-            }
-        });
-
-        Button btn_add = findViewById(R.id.button_add);
-        btn_add.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(InfoEventActivity.this, AddTaskActivity.class);
-                Bundle bundle = getIntent().getExtras();
-                Bundle bundle1 = new Bundle();
-                bundle1.putString("name", bundle.getString("name"));
-                bundle1.putString("description", bundle.getString("description"));
-                bundle1.putString("location", bundle.getString("locatiion"));
-                bundle1.putString("time_start", bundle.getString("time_start"));
-                bundle1.putString("time_end", bundle.getString("time_end"));
-                bundle1.putString("rrule", bundle.getString("rrule"));
-                bundle1.putLong("event_id", event_id);
-                intent.putExtras(bundle);
-                startActivity(intent);
-                overridePendingTransition (R.anim.enter, R.anim.exit);
-            }
-        });
-
-        ImageButton btn_back = findViewById(R.id.button_back);
-        btn_back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(InfoEventActivity.this, MainActivity.class);
-                Bundle bundle = new Bundle();
-                Calendar cal = new GregorianCalendar();
-                DateFormat dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-                bundle.putString("Date", dateFormat.format(cal.getTime()));
-                dateFormat = new SimpleDateFormat("HH");
-                bundle.putString("token", tokenID);
-                intent.putExtras(bundle);
-
-                startActivity(intent);
-                overridePendingTransition (R.anim.enter, R.anim.exit);
             }
         });
     }
@@ -335,33 +344,33 @@ public class InfoEventActivity extends AppCompatActivity {
                     if (rule.getInterval() == 1)
                         rep += "каждый год ";
                     else if (rule.getInterval() < 5)
-                        rep += "каждые " + rule.getCount() + " года ";
+                        rep += "каждые " + rule.getInterval() + " года ";
                     else
-                        rep += "каждые " + rule.getCount() + " лет ";
+                        rep += "каждые " + rule.getInterval() + " лет ";
                     break;
                 case MONTHLY:
                     if (rule.getInterval() == 1)
                         rep += "каждый месяц ";
                     else if (rule.getInterval() < 5)
-                        rep += "каждые " + rule.getCount() + " месяца ";
+                        rep += "каждые " + rule.getInterval() + " месяца ";
                     else
-                        rep += "каждые " + rule.getCount() + " месяцев ";
+                        rep += "каждые " + rule.getInterval() + " месяцев ";
                     break;
                 case WEEKLY:
                     if (rule.getInterval() == 1)
                         rep += "каждую неделю ";
                     else if (rule.getInterval() < 5)
-                        rep += "каждые " + rule.getCount() + " недели ";
+                        rep += "каждые " + rule.getInterval() + " недели ";
                     else
-                        rep += "каждые " + rule.getCount() + " недель ";
+                        rep += "каждые " + rule.getInterval() + " недель ";
                     break;
                 case DAILY:
                     if (rule.getInterval() == 1)
                         rep += "каждый день ";
                     else if (rule.getInterval() < 5)
-                        rep += "каждые " + rule.getCount() + " дня ";
+                        rep += "каждые " + rule.getInterval() + " дня ";
                     else
-                        rep += "каждые " + rule.getCount() + " дней ";
+                        rep += "каждые " + rule.getInterval() + " дней ";
                     break;
             }
             if (rule.getUntil() != null)

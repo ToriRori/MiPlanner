@@ -5,7 +5,9 @@ import com.example.miplanner.POJO.DatumPermissions;
 import com.example.miplanner.POJO.Events;
 import com.example.miplanner.POJO.EventsInstances;
 import com.example.miplanner.POJO.Permissions;
+import com.example.miplanner.POJO.RequestPermission;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -34,7 +36,7 @@ public interface ApiPermissions {
             "X-Firebase-Auth: serega_mem"
     })*/
     @GET("/api/v1/share/{token}")
-    Call<Void> activateShareLink(@Query("token") String token, @Header("X-Firebase-Auth") String tokenID);
+    Call<Void> activateShareLink(@Path("token") String token, @Header("X-Firebase-Auth") String tokenID);
 
     @Headers({
             "Accept: application/json",
@@ -42,7 +44,7 @@ public interface ApiPermissions {
             //"X-Firebase-Auth: serega_mem"
     })
     @POST("/api/v1/share")
-    Call<String> getShareLink(@Body DatumPermissions[] permissions, @Header("X-Firebase-Auth") String tokenID);
+    Call<ResponseBody> getShareLink(@Body RequestPermission[] permissions, @Header("X-Firebase-Auth") String tokenID);
 
     @Headers({
             "Accept: application/json",

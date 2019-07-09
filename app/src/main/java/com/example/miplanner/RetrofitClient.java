@@ -2,6 +2,7 @@ package com.example.miplanner;
 
 import com.example.miplanner.API.ApiEvents;
 import com.example.miplanner.API.ApiPatterns;
+import com.example.miplanner.API.ApiPermissions;
 import com.example.miplanner.API.ApiTasks;
 import com.example.miplanner.API.ApiTransfers;
 import com.google.gson.Gson;
@@ -54,5 +55,7 @@ public class RetrofitClient {
     public ApiTasks getTasksRepository() {  return retrofit.create(ApiTasks.class); }
 
     public ApiTransfers getTransfersRepository() {  return retrofit.create(ApiTransfers.class);  }
+
+    public ApiPermissions getSharingRepository() {  return  retrofit.create(ApiPermissions.class);  }
 }
 

@@ -18,10 +18,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.miplanner.Fragments.Calendar.CalendarController;
+import com.example.miplanner.Fragments.Permissions.PermissionsController;
 import com.example.miplanner.R;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -40,6 +42,8 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
 
@@ -49,15 +53,16 @@ public class MainActivity extends AppCompatActivity
     private FirebaseAuth mAuth;
     FirebaseUser user;
     String tokenId = null;
+    ProgressBar progressBar;
     //private CalendarDbHelper mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        progressBar = findViewById(R.id.progressBar);
 
         if (getIntent().getExtras() != null) {
-            tokenId = getIntent().getExtras().getString("token");
             getDay(getIntent().getExtras());
         }
 
@@ -98,6 +103,7 @@ public class MainActivity extends AppCompatActivity
         super.onStart();
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null) {
+            progressBar.setVisibility(View.VISIBLE);
             updateUI(account);
             mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
                 @Override
@@ -105,10 +111,12 @@ public class MainActivity extends AppCompatActivity
                     tokenId = task.getResult().getToken();
                     NavigationView navigationView = findViewById(R.id.nav_view);
                     navigationView.setNavigationItemSelectedListener(MainActivity.this);
+                    progressBar.setVisibility(View.GONE);
                 }
             });
         }
         else {
+            progressBar.setVisibility(View.GONE);
             NavigationView navigationView = findViewById(R.id.nav_view);
             View headerLayout = navigationView.getHeaderView(0);
             LinearLayout accountInfo = headerLayout.findViewById(R.id.account_info);
@@ -186,6 +194,7 @@ public class MainActivity extends AppCompatActivity
 
 
     private void signIn() {
+        progressBar.setVisibility(View.VISIBLE);
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
@@ -207,6 +216,10 @@ public class MainActivity extends AppCompatActivity
                         accountInfo.setVisibility(View.GONE);
                     }
                 });
+        if (navigationView.getCheckedItem() != null)
+            navigationView.getCheckedItem().setChecked(false);
+        for (int i = 0; i < this.getSupportFragmentManager().getBackStackEntryCount(); i++)
+            this.getSupportFragmentManager().popBackStack();
     }
 
     @Override
@@ -216,6 +229,7 @@ public class MainActivity extends AppCompatActivity
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
+            progressBar.setVisibility(View.GONE);
         }
     }
 
@@ -257,14 +271,15 @@ public class MainActivity extends AppCompatActivity
 
         if (tokenId == null) {
             Toast.makeText(MainActivity.this, "Вы не вошли", Toast.LENGTH_SHORT).show();
+            return false;
         }
 
         int id = item.getItemId();
 
         if (id == R.id.calendar) {
             fragmentClass = CalendarController.class;
-        }/* else if (id == R.id.tasks) {
-            fragmentClass = InfoEventActivity.class;
+        } else if (id == R.id.tasks) {
+            fragmentClass = PermissionsController.class;
         }/* else if (id == R.id.nav_slideshow) {
             fragmentClass = MonthController.class;
         }*/
@@ -278,17 +293,12 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
 
-        Bundle bundle = new Bundle();
-        bundle.putString("token", tokenId);
-        fragment.setArguments(bundle);
-
         FragmentTransaction fragmentManager = getSupportFragmentManager().beginTransaction();
         fragmentManager.replace(R.id.container, fragment);
         fragmentManager.addToBackStack(null);
         fragmentManager.commit();
         item.setChecked(true);
         setTitle(item.getTitle());
-
         return true;
     }
 

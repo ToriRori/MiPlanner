@@ -8,6 +8,7 @@ import com.github.tibolte.agendacalendarview.models.DayItem;
 import com.github.tibolte.agendacalendarview.render.DefaultEventRenderer;
 import com.github.tibolte.agendacalendarview.render.EventRenderer;
 import com.github.tibolte.agendacalendarview.utils.BusProvider;
+import com.github.tibolte.agendacalendarview.utils.DateHelper;
 import com.github.tibolte.agendacalendarview.utils.Events;
 import com.github.tibolte.agendacalendarview.utils.ListViewScrollTracker;
 import com.github.tibolte.agendacalendarview.widgets.FloatingActionButton;
@@ -188,6 +189,10 @@ public class AgendaCalendarView extends FrameLayout implements StickyListHeaders
                 mCalendarPickerController.onScrollToDate(event.getInstanceDay());
             }
         }
+    }
+
+    public void scrollToDate(Calendar calendar) {
+        mAgendaView.getAgendaListView().scrollToCurrentDate(calendar);
     }
 
     public DayItem getSelectedDay() {

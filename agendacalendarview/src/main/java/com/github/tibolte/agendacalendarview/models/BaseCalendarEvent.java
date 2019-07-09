@@ -1,12 +1,13 @@
 package com.github.tibolte.agendacalendarview.models;
 
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 /**
  * Event model class containing the information to be displayed on the agenda view.
  */
-public class BaseCalendarEvent implements CalendarEvent {
+public class BaseCalendarEvent implements CalendarEvent, Serializable {
 
     /**
      * Id of the event.

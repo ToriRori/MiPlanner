@@ -11,6 +11,7 @@
         android:layout_marginLeft="20dp"
         android:layout_marginTop="20dp"
         android:layout_weight="1"
+        android:textColor="@color/theme_primary"
         android:text="Повторяется раз в" />
 
     <EditText
@@ -25,7 +26,7 @@
         android:outlineAmbientShadowColor="@color/calendar_text_current_day"
         android:outlineSpotShadowColor="@color/calendar_text_current_day"
         android:shadowColor="@color/calendar_text_current_day"
-        android:textColor="@color/blue_dark" />
+        android:textColor="@color/theme_primary" />
 
 
     <Spinner
@@ -34,6 +35,7 @@
         android:layout_height="45dp"
         android:layout_below="@+id/textView2"
         android:layout_marginTop="10dp"
+        android:textColor="@color/theme_primary"
         android:layout_toRightOf="@+id/countRepeat"
         android:layout_weight="1" />
 
@@ -50,6 +52,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingLeft="20dp"
+            android:textColor="@color/theme_primary"
             android:text="Когда повторяется" />
 
         <LinearLayout
@@ -64,7 +67,7 @@
                 android:layout_height="28dp"
                 android:background="@drawable/corners2"
                 android:layout_weight="1"
-                android:textColor="@color/black"
+                android:textColor="@color/theme_primary"
                 android:text="ПН" />
 
             <Button
@@ -73,7 +76,7 @@
                 android:layout_height="28dp"
                 android:background="@drawable/corners2"
                 android:layout_weight="1"
-                android:textColor="@color/black"
+                android:textColor="@color/theme_primary"
                 android:text="ВТ" />
 
             <Button
@@ -82,7 +85,7 @@
                 android:layout_height="28dp"
                 android:background="@drawable/corners2"
                 android:layout_weight="1"
-                android:textColor="@color/black"
+                android:textColor="@color/theme_primary"
                 android:text="СР" />
 
             <Button
@@ -91,7 +94,7 @@
                 android:layout_height="28dp"
                 android:background="@drawable/corners2"
                 android:layout_weight="1"
-                android:textColor="@color/black"
+                android:textColor="@color/theme_primary"
                 android:text="ЧТ" />
 
             <Button
@@ -100,7 +103,7 @@
                 android:layout_height="28dp"
                 android:background="@drawable/corners2"
                 android:layout_weight="1"
-                android:textColor="@color/black"
+                android:textColor="@color/theme_primary"
                 android:text="ПТ" />
 
             <Button
@@ -108,7 +111,7 @@
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:background="@drawable/corners2"
-                android:textColor="@color/black"
+                android:textColor="@color/theme_primary"
                 android:layout_weight="1"
                 android:text="СБ" />
 
@@ -118,7 +121,7 @@
                 android:layout_height="28dp"
                 android:background="@drawable/corners2"
                 android:layout_weight="1"
-                android:textColor="@color/black"
+                android:textColor="@color/theme_primary"
                 android:text="ВС" />
 
         </LinearLayout>
@@ -137,6 +140,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/theme_primary"
             android:text="Когда повторяется" />
 
         <LinearLayout
@@ -162,6 +166,7 @@
         android:layout_marginTop="20dp"
         android:layout_marginStart="20dp"
         android:layout_below="@id/week_attr"
+        android:textColor="@color/theme_primary"
         android:layout_weight="1"
         android:text="Заканчивается" />
 
@@ -176,6 +181,7 @@
             android:id="@+id/neverEnding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/theme_primary"
             android:layout_marginTop="10dp"
             android:text="Никогда"/>
 
@@ -183,6 +189,7 @@
             android:id="@+id/dayEnding"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/theme_primary"
             android:layout_marginTop="10dp"
             android:text="" />
 
@@ -192,6 +199,7 @@
             android:layout_height="wrap_content"
             android:clickable="true"
             android:textSize="14sp"
+            android:textColor="@color/theme_primary"
             android:layout_marginTop="-25dp"
             android:layout_marginStart="53dp">
         </TextView>
@@ -200,6 +208,7 @@
             android:id="@+id/timesEnding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/theme_primary"
             android:layout_marginTop="10dp"
             android:text="После повтора" />
 
@@ -208,6 +217,7 @@
             android:layout_width="30dp"
             android:layout_height="wrap_content"
             android:textSize="14sp"
+            android:textColor="@color/theme_primary"
             android:layout_marginTop="-35dp"
             android:layout_marginStart="143dp"/>
 
@@ -217,6 +227,8 @@
         android:id="@+id/finish"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/corners5"
+        android:textColor="@color/theme_primary"
         android:layout_alignParentRight="true"
         android:text="Готово"/>
 

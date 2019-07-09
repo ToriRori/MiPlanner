@@ -3,9 +3,10 @@ package com.example.miplanner.Fragments.Calendar;
 import com.github.tibolte.agendacalendarview.models.BaseCalendarEvent;
 import com.github.tibolte.agendacalendarview.models.CalendarEvent;
 
+import java.io.Serializable;
 import java.util.Calendar;
 
-public class DrawableCalendarEvent extends BaseCalendarEvent {
+public class DrawableCalendarEvent extends BaseCalendarEvent implements Serializable {
 
     // region Constructors
     public DrawableCalendarEvent(long id, int color, String title, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {

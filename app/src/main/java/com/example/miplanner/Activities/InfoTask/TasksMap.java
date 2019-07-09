@@ -1,4 +1,4 @@
-package com.example.miplanner.Activities.InfoEvent;
+package com.example.miplanner.Activities.InfoTask;
 import java.util.HashMap;
 
 public class TasksMap extends HashMap<String, String> {

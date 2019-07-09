@@ -1,4 +1,4 @@
-package com.example.miplanner.Activities;
+package com.example.miplanner.Activities.Event;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,9 +12,11 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.miplanner.Activities.MainActivity;
 import com.example.miplanner.POJO.DatumEvents;
 import com.example.miplanner.POJO.DatumPatterns;
 import com.example.miplanner.POJO.Events;
@@ -44,6 +46,7 @@ public class EditEventActivity extends AppCompatActivity {
 
     //private CalendarDbHelper mDbHelper;
     String tokenID = null;
+    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +54,8 @@ public class EditEventActivity extends AppCompatActivity {
 
         setContentView(R.layout.edit_event);
 
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.GONE);
         final TimePicker tpStart = findViewById(R.id.timePickerStart);
         final DatePicker dpStart = findViewById(R.id.datePickerStart);
         final TimePicker tpEnd = findViewById(R.id.timePickerEnd);
@@ -136,6 +141,7 @@ public class EditEventActivity extends AppCompatActivity {
                     //mDbHelper.editEventById((int) itemNumber, nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
                     Toast.makeText(EditEventActivity.this, "Название события не валидно", Toast.LENGTH_SHORT).show();
 
+                progressBar.setVisibility(View.VISIBLE);
                 requestForEdit(rrule);
             }
         });
@@ -160,7 +166,6 @@ public class EditEventActivity extends AppCompatActivity {
         final String name = bundle.getString("name");
         final String descr = bundle.getString("descr");
         final String loc = bundle.getString("loc");
-        tokenID =bundle.getString("token");
 
         if (startDate != null) {
             String[] part = startDate.split("\\.");
@@ -203,9 +208,7 @@ public class EditEventActivity extends AppCompatActivity {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-            if (rule != null)
-                repeatbtn.setText("Не повторяется");
-            else if (rule.getCount() == 0 && rule.getUntil() == null) {
+            if (rule.getCount() == 0 && rule.getUntil() == null) {
                 if (rule.getFreq() == Frequency.DAILY && rule.getInterval() == 1)
                     repeatbtn.setText("Каждый день");
                 else if (rule.getFreq() == Frequency.WEEKLY && rule.getInterval() == 1)
@@ -330,8 +333,8 @@ public class EditEventActivity extends AppCompatActivity {
         String rrule = "";
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
         switch (repeatbtn.getText().toString()) {
-            case "Не повторяеся":
-                rrule = "FREQ=DAILY;INTERVAL=7;COUNT=1;";
+            case "Не повторяется":
+                rrule = null;
                 break;
             case "Каждый день":
                 rrule = "FREQ=DAILY;INTERVAL=1;";
@@ -343,7 +346,7 @@ public class EditEventActivity extends AppCompatActivity {
                 rrule = "FREQ=MONTHLY;INTERVAL=1;";
                 break;
             case "Каждый год":
-                rrule = "FREQ=YEARLY;INTERVAL =1;";
+                rrule = "FREQ=YEARLY;INTERVAL=1;";
                 break;
             case "Другое...":
                 Bundle bundle = getIntent().getExtras();
@@ -404,8 +407,10 @@ public class EditEventActivity extends AppCompatActivity {
                                     }
                                     if (r.getUntil() == null && r.getCount() == 0)
                                         datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
-                                    else
-                                        datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                                    else {
+                                        Calendar calendarEnd = getEnd(calEnd, r);
+                                        datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), calendarEnd.getTimeInMillis(), "", finalRule, calStart.getTimeInMillis(), "Asia/Vladivostok");
+                                    }
                                 }
                                 else
                                     datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
@@ -414,19 +419,17 @@ public class EditEventActivity extends AppCompatActivity {
                                     public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                                         Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
                                         Bundle bundle = new Bundle();
-                                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                                         Calendar cal = new GregorianCalendar();
                                         try {
                                             cal.setTime(dateFormat.parse(selectedStart));
                                         } catch (ParseException e) {
                                             e.printStackTrace();
                                         }
-                                        dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-                                        bundle.putString("Date", dateFormat.format(cal.getTime()));
-                                        dateFormat = new SimpleDateFormat("HH");
-                                        bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
-                                        bundle.putString("token", tokenID);
+                                        bundle.putString("Date", dateFormat.format(calStart.getTime()));
+
                                         intent.putExtras(bundle);
+                                        progressBar.setVisibility(View.GONE);
                                         startActivity(intent);
                                         overridePendingTransition (R.anim.enter, R.anim.exit);
                                     }
@@ -474,5 +477,35 @@ public class EditEventActivity extends AppCompatActivity {
                     intent.putExtras(bundle);
                     startActivity(intent);
                     overridePendingTransition (R.anim.enter, R.anim.exit);*/
+    }
+
+    public Calendar getEnd(Calendar calendar, RRule r) {
+        Calendar cal = new GregorianCalendar();
+        cal.setTime(calendar.getTime());
+        if (r.getUntil() == null)
+            switch (r.getFreq()){
+                case DAILY:
+                    cal.add(Calendar.DAY_OF_MONTH, r.getInterval()*r.getCount());
+                    break;
+                case WEEKLY:
+                    cal.add(Calendar.WEEK_OF_YEAR, r.getInterval()*r.getCount());
+                    break;
+                case MONTHLY:
+                    cal.add(Calendar.MONTH, r.getInterval()*r.getCount());
+                    break;
+                case YEARLY:
+                    cal.add(Calendar.YEAR, r.getInterval()*r.getCount());
+                    break;
+            }
+        else {
+            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+            try {
+                cal.setTime(format.parse(r.getUntil().day()+"."+r.getUntil().month()+"."+r.getUntil().year()));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return cal;
     }
 }

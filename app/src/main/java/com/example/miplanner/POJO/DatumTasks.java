@@ -3,7 +3,9 @@ package com.example.miplanner.POJO;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class DatumTasks {
+import java.io.Serializable;
+
+public class DatumTasks implements Serializable {
     @Expose
     private Long id;
     @Expose
@@ -18,6 +20,8 @@ public class DatumTasks {
     private long deadline_at;
     @Expose
     private String name;
+    @Expose
+    private Long event_id;
     @Expose
     private String status;
     @Expose
@@ -54,6 +58,8 @@ public class DatumTasks {
     public String getDetails() {
         return details;
     }
+
+    public Long getEvent_id() { return event_id; }
 
     public void setDetails(String details) {
         this.details = details;

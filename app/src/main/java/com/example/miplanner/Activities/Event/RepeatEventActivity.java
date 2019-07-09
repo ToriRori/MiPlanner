@@ -1,4 +1,4 @@
-package com.example.miplanner.Activities;
+package com.example.miplanner.Activities.Event;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
@@ -20,13 +20,9 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.miplanner.Data.CalendarDbHelper;
-import com.example.miplanner.Event;
 import com.example.miplanner.R;
 import com.google.ical.values.RRule;
 import com.google.ical.values.WeekdayNum;
-
-import org.w3c.dom.Text;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -131,18 +127,23 @@ public class RepeatEventActivity extends AppCompatActivity {
                 switch (repeatType.getSelectedItemPosition()) {
                     case 0:
                         rrule += "DAILY;";
+                        rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
                         break;
                     case 1:
                         rrule += "WEEKLY;";
+                        rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
+                        rrule += "BYDAY="+week+";";
                         break;
                     case 2:
                         rrule += "MONTHLY;";
+                        rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
                         break;
                     case 4:
                         rrule += "YEARLY;";
+                        rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
                         break;
                 }
-                rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
+
 
                 //collect end of repeat
                 int selectedRadio = ending.getCheckedRadioButtonId();
@@ -174,7 +175,6 @@ public class RepeatEventActivity extends AppCompatActivity {
                 intent.putExtra("end_time", bundle.getString("end_time"));
                 intent.putExtra("descr", bundle.getString("descr"));
                 intent.putExtra("loc", bundle.getString("loc"));
-                intent.putExtra("token", bundle.getString("token"));
                 intent.putExtra("event_id", bundle.getLong("event_id"));
                 intent.putExtra("rrule", rrule);
                 startActivity(intent);
@@ -310,13 +310,13 @@ public class RepeatEventActivity extends AppCompatActivity {
             day.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (day.getCurrentTextColor() == getResources().getColor(R.color.black)) {
+                    if (day.getCurrentTextColor() == getResources().getColor(R.color.theme_primary)) {
                         day.setBackground(getResources().getDrawable(R.drawable.corners3));
                         day.setTextColor(getResources().getColor(R.color.white));
                     }
                     else {
                         day.setBackground(getResources().getDrawable(R.drawable.corners2));
-                        day.setTextColor(getResources().getColor(R.color.black));
+                        day.setTextColor(getResources().getColor(R.color.theme_primary));
                     }
                 }
             });

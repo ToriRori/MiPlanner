@@ -6,46 +6,43 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.AsyncLayoutInflater;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.miplanner.Activities.AddEventActivity;
-import com.example.miplanner.Activities.EditEventActivity;
-import com.example.miplanner.Activities.InfoEvent.InfoEventActivity;
-import com.example.miplanner.Activities.MainActivity;
+import com.example.miplanner.Activities.Event.AddEventActivity;
+import com.example.miplanner.Activities.Event.EditEventActivity;
+import com.example.miplanner.Activities.InfoTask.InfoEventActivity;
+import com.example.miplanner.Activities.ShareActivity;
 import com.example.miplanner.Data.CalendarDbHelper;
 import com.example.miplanner.Fragments.OnSwipeTouchListener;
 import com.example.miplanner.POJO.DatumEvents;
 import com.example.miplanner.POJO.DatumEventsInstances;
 import com.example.miplanner.POJO.DatumPatterns;
-import com.example.miplanner.POJO.Events;
 import com.example.miplanner.POJO.EventsInstances;
 import com.example.miplanner.POJO.Patterns;
 import com.example.miplanner.R;
 import com.example.miplanner.RetrofitClient;
 import com.github.tibolte.agendacalendarview.AgendaCalendarView;
 import com.github.tibolte.agendacalendarview.CalendarPickerController;
-import com.github.tibolte.agendacalendarview.models.BaseCalendarEvent;
 import com.github.tibolte.agendacalendarview.models.CalendarEvent;
 import com.github.tibolte.agendacalendarview.models.DayItem;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
-import com.google.ical.values.DateValue;
-import com.google.ical.values.RRule;
-import com.google.ical.values.WeekdayNum;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -88,15 +85,17 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     String tokenID = null;
 
     FirebaseAuth mAuth;
+    ProgressBar progressBar;
 
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
                              final Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.calendar_fragment, container, false);
+
         ButterKnife.bind(getActivity());
-        Bundle bundle = getArguments();
         mAuth = FirebaseAuth.getInstance();
-        tokenID = bundle.getString("token");
+        progressBar = view.findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.GONE);
 
         minDate.set(Calendar.MONTH, 0);
         minDate.set(Calendar.DAY_OF_MONTH, 1);
@@ -216,6 +215,8 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         btn_add.setOnClickListener(addListener);
         ImageButton btn_export = view.findViewById(R.id.button_export);
         btn_export.setOnClickListener(exportListener);
+        ImageButton btn_share = view.findViewById(R.id.button_share);
+        btn_share.setOnClickListener(shareListener);
 
         return view;
     }
@@ -228,7 +229,20 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             Date date = day.getDate();
             SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
             intent.putExtra("day", format.format(date));
-            intent.putExtra("token", tokenID);
+            startActivity(intent);
+            getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
+        }
+    };
+
+    View.OnClickListener shareListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent(getActivity(), ShareActivity.class);
+            Bundle bundle = new Bundle();
+            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+            bundle.putString("start", format.format(minDate.getTime()));
+            bundle.putString("end", format.format(maxDate.getTime()));
+            intent.putExtras(bundle);
             startActivity(intent);
             getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
         }
@@ -276,7 +290,6 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                             Calendar calendar = new GregorianCalendar();
                             SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy-HH-mm-ss");
                             try {
-                                String temp = Environment.getExternalStorageDirectory() + "/MiPlanner/" + "MiCalendar"+format.format(calendar.getTime())+".ics";
                                 File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()  + "/MiCalendar"+format.format(calendar.getTime())+".ics");
                                 file.createNewFile();
                                 FileWriter fileWriter = new FileWriter(file);
@@ -301,6 +314,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
 
     public void getEvents() {
         final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        progressBar.setVisibility(View.VISIBLE);
         mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
             @Override
             public void onComplete(@NonNull Task<GetTokenResult> task) {
@@ -313,6 +327,8 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                             if (response.body() != null) {
                                 eventList.clear();
                                 evsInst = Arrays.asList(response.body().getData());
+                                if (evsInst.size() == 0)
+                                    progressBar.setVisibility(View.GONE);
                                 for (int i = 0; i < evsInst.size(); i++) {
                                     final int fi = i;
                                     retrofitClient.getEventRepository().getEventsById(new Long[]{evsInst.get(i).getEventId()}, tokenID).enqueue(new Callback<com.example.miplanner.POJO.Events>() {
@@ -391,12 +407,13 @@ public class CalendarController extends Fragment implements CalendarPickerContro
 
     @Override
     public void onDaySelected(DayItem dayItem) {
+
     }
 
     @Override
     public void onEventSelected(final CalendarEvent event) {
         if (!event.getTitle().equals("No events")) {
-
+            progressBar.setVisibility(View.VISIBLE);
             mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
                 @Override
                 public void onComplete(@NonNull Task<GetTokenResult> task) {
@@ -417,10 +434,12 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                             bundle.putString("location", event.getLocation());
                             bundle.putString("time_start", format.format(calStart.getTime()));
                             bundle.putString("time_end",format.format(calEnd.getTime()));
+                            bundle.putString("time_end_current", format.format(event.getEndTime().getTime()));
                             bundle.putString("rrule", event.getRrule());
                             bundle.putLong("event_id", event.getId());
 
                             intent.putExtras(bundle);
+                            progressBar.setVisibility(View.GONE);
                             startActivity(intent);
                             getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
                         }
@@ -468,11 +487,13 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                 @Override
                 public void onClick(View v) {
                     //mDbHelper.deleteEventById((int) event.getId());
+                    progressBar.setVisibility(View.VISIBLE);
                     RetrofitClient retrofitClient = RetrofitClient.getInstance();
                     retrofitClient.getEventRepository().delete(event.getId(), tokenID).enqueue(new Callback<Void>() {
                         @Override
                         public void onResponse(Call<Void> call, Response<Void> response) {
                             start = null;
+                            progressBar.setVisibility(View.GONE);
                             refreshItems();
                             popupWindow.dismiss();
                         }
@@ -489,6 +510,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
 
     public void goToEdit(final CalendarEvent event) {
         final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        progressBar.setVisibility(View.VISIBLE);
         retrofitClient.getEventRepository().getInstancesById(new Long[]{event.getId()}, tokenID).enqueue(new Callback<EventsInstances>() {
             @Override
             public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
@@ -515,10 +537,10 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                         bundle.putString("start_time", format2.format(cal1.getTime()));
                         bundle.putString("end_date", format1.format(cal2.getTime()));
                         bundle.putString("end_time", format2.format(cal2.getTime()));
-                        bundle.putString("token", tokenID);
 
                         bundle.putString("rrule", patt.get(0).getRrule());
                         intent.putExtras(bundle);
+                        progressBar.setVisibility(View.GONE);
                         startActivity(intent);
                         getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
                     }
@@ -542,6 +564,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         fragmentTransaction.detach(this);
         fragmentTransaction.attach(this);
         fragmentTransaction.commit();
+
     }
 
     @Override

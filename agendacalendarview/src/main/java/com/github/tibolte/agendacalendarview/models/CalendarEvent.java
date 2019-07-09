@@ -1,8 +1,9 @@
 package com.github.tibolte.agendacalendarview.models;
 
+import java.io.Serializable;
 import java.util.Calendar;
 
-public interface CalendarEvent {
+public interface CalendarEvent extends Serializable {
 
     long getId();
 
