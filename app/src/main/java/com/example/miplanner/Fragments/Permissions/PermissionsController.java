@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.PopupWindow;
@@ -61,6 +62,57 @@ public class PermissionsController extends Fragment {
 
         mAuth = FirebaseAuth.getInstance();
 
+        ImageButton deleteAll = view.findViewById(R.id.delete_all_btn);
+        deleteAll.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<GetTokenResult> task) {
+                        tokenId = task.getResult().getToken();
+                        progressBar.setVisibility(View.VISIBLE);
+                        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+                        retrofitClient.getSharingRepository().getAllPermissions(tokenId).enqueue(new Callback<Permissions>() {
+                            @Override
+                            public void onResponse(Call<Permissions> call, Response<Permissions> response) {
+                                if (response.code() != 200) {
+                                    Toast.makeText(getContext(), "Не удалось удалить право", Toast.LENGTH_SHORT).show();
+                                    progressBar.setVisibility(View.GONE);
+                                    return;
+                                }
+                                final List<DatumPermissions> list = Arrays.asList(response.body().getData());
+                                if (list.size() != 0) {
+                                    final int[] count = {0};
+                                    for (int i = 0; i < list.size(); i++) {
+                                        retrofitClient.getSharingRepository().delete(list.get(i).getId(), tokenId).enqueue(new Callback<Void>() {
+                                            @Override
+                                            public void onResponse(Call<Void> call, Response<Void> response) {
+                                                count[0]++;
+                                                if (count[0] == list.size()-1) {
+                                                    refreshItems();
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onFailure(Call<Void> call, Throwable t) {
+
+                                            }
+                                        });
+                                    }
+                                }
+
+                            }
+
+                            @Override
+                            public void onFailure(Call<Permissions> call, Throwable t) {
+                                Toast.makeText(getContext(), "Не удалось удалить право", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
         mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
             @Override
             public void onComplete(@NonNull Task<GetTokenResult> task) {
@@ -70,7 +122,15 @@ public class PermissionsController extends Fragment {
                 retrofitClient.getSharingRepository().getAllPermissions(tokenId).enqueue(new Callback<Permissions>() {
                     @Override
                     public void onResponse(Call<Permissions> call, Response<Permissions> response) {
+                        if (response.body() == null) {
+                            progressBar.setVisibility(View.GONE);
+                            return;
+                        }
                         final List<DatumPermissions> permissions = Arrays.asList(response.body().getData());
+                        if (permissions.size() == 0) {
+                            progressBar.setVisibility(View.GONE);
+                            return;
+                        }
                         for (int i = 0; i < permissions.size(); i++) {
                             final String[] type = {""};
                             String action_type = permissions.get(i).getName().split("_")[0];
@@ -93,9 +153,9 @@ public class PermissionsController extends Fragment {
                                         @Override
                                         public void onResponse(Call<Events> call, Response<Events> response) {
                                             List<DatumEvents> listEvents = Arrays.asList(response.body().getData());
-                                            //if (listEvents.size() == 0)
-                                            //    type[0] += "события \"" + "тупого" + "\"";
-                                            //else
+                                            if (listEvents.size() == 0)
+                                                type[0] += "события \"" + "баги" + "\"";
+                                            else
                                                 type[0] += "события \"" + listEvents.get(0).getName() + "\"";
                                             list.add(new UsersMap(permissions.get(finalI).getUser_id(), permissions.get(finalI).getName(), permissions.get(finalI).getEntity_id(),
                                                     permissions.get(finalI).getId(), type[0]));

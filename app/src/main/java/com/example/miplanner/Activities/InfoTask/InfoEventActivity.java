@@ -11,12 +11,14 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.miplanner.Activities.MainActivity;
 import com.example.miplanner.Data.CalendarDbHelper;
@@ -111,6 +113,7 @@ public class InfoEventActivity extends AppCompatActivity {
                     bundle1.putString("time_start", bundle.getString("time_start"));
                     bundle1.putString("time_end", bundle.getString("time_end"));
                     bundle1.putString("rrule", bundle.getString("rrule"));
+                    bundle1.putString("owner", bundle.getString("owner"));
                     bundle1.putString("time_end_current", bundle.getString("time_end_current"));
                     bundle1.putLong("event_id", event_id);
 
@@ -129,6 +132,11 @@ public class InfoEventActivity extends AppCompatActivity {
                     retrofitClient.getTasksRepository().delete(Long.parseLong(hm.get("id")),tokenID).enqueue(new Callback<Void>() {
                         @Override
                         public void onResponse(Call<Void> call, Response<Void> response) {
+                            if (response.code() != 200) {
+                                Toast.makeText(InfoEventActivity.this, "Не удалось удалить задачу", Toast.LENGTH_SHORT).show();
+                                progressBar.setVisibility(View.GONE);
+                                return;
+                            }
                             Intent intent = getIntent();
                             finish();
                             startActivity(intent);
@@ -137,7 +145,7 @@ public class InfoEventActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<Void> call, Throwable t) {
-
+                            Toast.makeText(InfoEventActivity.this, "Не удалось удалить задачу", Toast.LENGTH_SHORT).show();
                         }
                     });
                 }});
@@ -176,6 +184,7 @@ public class InfoEventActivity extends AppCompatActivity {
             bundle1.putString("time_end", bundle.getString("time_end"));
             bundle1.putString("rrule", bundle.getString("rrule"));
             bundle1.putString("time_end_current", bundle.getString("time_end_current"));
+            bundle1.putString("owner", bundle.getString("owner"));
             bundle1.putLong("event_id", event_id);
             intent.putExtras(bundle);
             startActivity(intent);
@@ -233,6 +242,7 @@ public class InfoEventActivity extends AppCompatActivity {
         String startTime = bundle.getString("time_start");
         String endTime = bundle.getString("time_end");
         String rrule = bundle.getString("rrule");
+        String owner = bundle.getString("owner");
 
         TextView nameText = findViewById(R.id.nameText);
         TextView descrText = findViewById(R.id.descriptionText);
@@ -240,6 +250,13 @@ public class InfoEventActivity extends AppCompatActivity {
         TextView startTimeText = findViewById(R.id.timeStartText);
         TextView durationText = findViewById(R.id.durationText);
         TextView repeatText = findViewById(R.id.repeatText);
+        TextView ownerText = findViewById(R.id.authorText);
+        LinearLayout ownerLayout = findViewById(R.id.authorLayout);
+
+        if (mAuth.getCurrentUser().getUid().equals(owner))
+            ownerLayout.setVisibility(View.GONE);
+        else
+            ownerText.setText(owner);
 
         nameText.setText(name);
         if (descr == null || descr.equals(""))

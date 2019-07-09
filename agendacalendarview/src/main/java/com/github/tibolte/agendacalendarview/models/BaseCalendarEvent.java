@@ -80,14 +80,17 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
 
     private String mRrule;
 
+    private String mOwner;
+
     // region Constructor
 
-    public BaseCalendarEvent(long id, int color, String title, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
+    public BaseCalendarEvent(long id, int color, String title, String owner, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
         this.mId = id;
         this.mColor = color;
         this.mAllDay = allDay;
         this.mDuration = duration;
         this.mTitle = title;
+        this.mOwner = owner;
         this.mDescription = description;
         this.mLocation = location;
         this.mRrule = rrule;
@@ -160,6 +163,7 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
         this.mTitle = calendarEvent.getTitle();
         this.mDescription = calendarEvent.getDescription();
         this.mRrule = calendarEvent.getRrule();
+        this.mOwner = calendarEvent.getOwner();
         this.mLocation = calendarEvent.getLocation();
         this.mStartTime = new GregorianCalendar();
         this.mStartTime.setTime(calendarEvent.getStartTime().getTime());
@@ -284,6 +288,10 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
     public void setWeather(boolean mWeather) {
         this.mWeather = mWeather;
     }
+
+    public String getOwner() {  return mOwner;  }
+
+    public void setOwner(String mOwner) {   this.mOwner = mOwner;   }
 
     public DayItem getDayReference() {
         return mDayReference;

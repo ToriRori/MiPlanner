@@ -1,6 +1,7 @@
 package com.example.miplanner.Activities.Event;
 
 import android.content.Intent;
+import android.icu.util.TimeZone;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -36,6 +37,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -366,6 +368,11 @@ public class AddEventActivity extends AppCompatActivity {
                 retrofitClient.getEventRepository().save(datEv,tokenID).enqueue(new Callback<Events>() {
                     @Override
                     public void onResponse(Call<Events> call, Response<Events> response) {
+                        if (response.code() != 200) {
+                            Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
+                            progressBar.setVisibility(View.GONE);
+                            return;
+                        }
                         List<DatumEvents> event = Arrays.asList(response.body().getData());
                         final Calendar calStart = new GregorianCalendar();
                         Calendar calEnd = new GregorianCalendar();
@@ -387,7 +394,7 @@ public class AddEventActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                             if (r.getUntil() == null && r.getCount() == 0)
-                                datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", rule,calStart.getTimeInMillis(),"Asia/Vladivostok");
+                                datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", rule,calStart.getTimeInMillis(), "Asia/Vladivostok");
                             else {
                                 Calendar calendarEnd = getEnd(calEnd, r);
                                 datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), calendarEnd.getTimeInMillis(), "", rule, calStart.getTimeInMillis(), "Asia/Vladivostok");
@@ -398,6 +405,11 @@ public class AddEventActivity extends AppCompatActivity {
                         retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP,tokenID).enqueue(new Callback<Patterns>() {
                             @Override
                             public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                                if (response.code() != 200) {
+                                    Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
+                                    progressBar.setVisibility(View.GONE);
+                                    return;
+                                }
                                 Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
                                 Bundle bundle = new Bundle();
 
@@ -417,14 +429,14 @@ public class AddEventActivity extends AppCompatActivity {
 
                             @Override
                             public void onFailure(Call<Patterns> call, Throwable t) {
-
+                                Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
 
                     @Override
                     public void onFailure(Call<Events> call, Throwable t) {
-
+                        Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
                     }
                 });
 

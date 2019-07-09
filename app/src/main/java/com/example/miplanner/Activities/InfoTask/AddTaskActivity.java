@@ -12,6 +12,7 @@ import android.widget.ProgressBar;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.miplanner.Activities.Event.AddEventActivity;
 import com.example.miplanner.POJO.DatumTasks;
 import com.example.miplanner.POJO.Tasks;
 import com.example.miplanner.R;
@@ -92,6 +93,11 @@ public class AddTaskActivity extends AppCompatActivity {
                 retrofitClient.getTasksRepository().save(bundle.getLong("event_id"), taskNew, tokenID).enqueue(new Callback<Tasks>() {
                     @Override
                     public void onResponse(Call<Tasks> call, Response<Tasks> response) {
+                        if (response.code() != 200) {
+                            Toast.makeText(AddTaskActivity.this, "Не удалось добавить задачу", Toast.LENGTH_SHORT).show();
+                            progressBar.setVisibility(View.GONE);
+                            return;
+                        }
                         Intent intent = new Intent(AddTaskActivity.this, InfoEventActivity.class);
 
                         Bundle bundle1 = new Bundle();
@@ -101,6 +107,7 @@ public class AddTaskActivity extends AppCompatActivity {
                         bundle1.putString("time_start", bundle.getString("time_start"));
                         bundle1.putString("time_end", bundle.getString("time_end"));
                         bundle1.putString("rrule", bundle.getString("rrule"));
+                        bundle1.putString("owner", bundle.getString("owner"));
                         bundle1.putLong("event_id", bundle.getLong("event_id"));
                         bundle1.putLong("time_end_current", bundle.getLong("time_end_current"));
 
@@ -112,7 +119,7 @@ public class AddTaskActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<Tasks> call, Throwable t) {
-
+                        Toast.makeText(AddTaskActivity.this, "Не удалось добавить задачу", Toast.LENGTH_SHORT).show();
                     }
                 });
             }

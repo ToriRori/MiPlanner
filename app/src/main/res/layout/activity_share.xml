@@ -62,7 +62,6 @@
         android:layout_margin="5dp"
         android:textSize="16dp"
         android:text="чтение"
-        android:checked="true"
         android:textColor="@color/theme_primary"/>
 
     <CheckBox

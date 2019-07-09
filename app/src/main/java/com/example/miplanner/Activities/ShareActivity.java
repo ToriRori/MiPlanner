@@ -85,7 +85,7 @@ public class ShareActivity extends AppCompatActivity {
             final CheckBox updateType = findViewById(R.id.update_type);
             final CheckBox deleteType = findViewById(R.id.delete_type);
 
-            if (!readType.isChecked()) {
+            if ((!readType.isChecked())&&(!updateType.isChecked())&&(!deleteType.isChecked())) {
                 Toast.makeText(ShareActivity.this, "Выберите как хотите поделиться", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -172,6 +172,62 @@ public class ShareActivity extends AppCompatActivity {
                     }
                 });
 
+            }
+            else {
+                final Long id = bundle.getLong("id");
+                final List<RequestPermission> permissions = new ArrayList<>();
+                final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+                mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<GetTokenResult> task) {
+                        tokenId = task.getResult().getToken();
+                        retrofitClient.getEventPatternRepository().getPatternsById(id, tokenId).enqueue(new Callback<Patterns>() {
+                            @Override
+                            public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                                final List<DatumPatterns> patts = Arrays.asList(response.body().getData());
+                                retrofitClient.getTasksRepository().getTasksByEventId(id, tokenId).enqueue(new Callback<Tasks>() {
+                                    @Override
+                                    public void onResponse(Call<Tasks> call, Response<Tasks> response) {
+                                        List<DatumTasks> tasks = Arrays.asList(response.body().getData());
+                                        if (readType.isChecked()) {
+                                            permissions.add(new RequestPermission("READ", id, "EVENT"));
+                                            permissions.add(new RequestPermission("READ", patts.get(0).getId(), "PATTERN"));
+
+                                            if (eventsTasksType.getId() == entityTypeId)
+                                                for (int j = 0; j < tasks.size(); j++)
+                                                    permissions.add(new RequestPermission("READ", tasks.get(j).getId(),"TASK"));
+                                        }
+                                        if (updateType.isChecked()) {
+                                            permissions.add(new RequestPermission("UPDATE", id,"EVENT"));
+                                            permissions.add(new RequestPermission("UPDATE", patts.get(0).getId(),"PATTERN"));
+                                            if (eventsTasksType.getId() == entityTypeId)
+                                                for (int j = 0; j < tasks.size(); j++)
+                                                    permissions.add(new RequestPermission("UPDATE", tasks.get(j).getId(),"TASK"));
+                                        }
+                                        if (deleteType.isChecked()) {
+                                            permissions.add(new RequestPermission("DELETE", id,"EVENT"));
+                                            permissions.add(new RequestPermission("DELETE", patts.get(0).getId(),"PATTERN"));
+                                            if (eventsTasksType.getId() == entityTypeId)
+                                                for (int j = 0; j < tasks.size(); j++)
+                                                    permissions.add(new RequestPermission("DELETE", tasks.get(j).getId(),"TASK"));
+                                        }
+                                        showToken(permissions);
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<Tasks> call, Throwable t) {
+
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onFailure(Call<Patterns> call, Throwable t) {
+
+                            }
+                        });
+                    }
+                });
             }
         }
     };

@@ -280,9 +280,9 @@ public class MainActivity extends AppCompatActivity
             fragmentClass = CalendarController.class;
         } else if (id == R.id.tasks) {
             fragmentClass = PermissionsController.class;
-        }/* else if (id == R.id.nav_slideshow) {
-            fragmentClass = MonthController.class;
-        }*/
+        } else if (id == R.id.info) {
+            return false;
+        }
 
         try {
             fragment = (Fragment) fragmentClass.newInstance();

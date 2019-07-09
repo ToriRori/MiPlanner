@@ -89,6 +89,11 @@ public class EditTaskActivity extends AppCompatActivity {
                 retrofitClient.getTasksRepository().update(Long.parseLong(bundle.getString("task_id")), taskNew, tokenID).enqueue(new Callback<Events>() {
                     @Override
                     public void onResponse(Call<Events> call, Response<Events> response) {
+                        if (response.code() != 200) {
+                            Toast.makeText(EditTaskActivity.this, "Не удалось изменить задачу", Toast.LENGTH_SHORT).show();
+                            progressBar.setVisibility(View.GONE);
+                            return;
+                        }
                         Intent intent = new Intent(EditTaskActivity.this, InfoEventActivity.class);
 
                         Bundle bundle1 = new Bundle();
@@ -97,6 +102,7 @@ public class EditTaskActivity extends AppCompatActivity {
                         bundle1.putString("location", bundle.getString("location"));
                         bundle1.putString("time_start", bundle.getString("time_start"));
                         bundle1.putString("time_end", bundle.getString("time_end"));
+                        bundle1.putString("owner", bundle.getString("owner"));
                         bundle1.putString("rrule", bundle.getString("rrule"));
                         bundle1.putLong("event_id", bundle.getLong("event_id"));
                         bundle1.putLong("time_end_current", bundle.getLong("time_end_current"));
@@ -109,7 +115,7 @@ public class EditTaskActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<Events> call, Throwable t) {
-
+                        Toast.makeText(EditTaskActivity.this, "Не удалось изменить задачу", Toast.LENGTH_SHORT).show();
                     }
                 });
             }

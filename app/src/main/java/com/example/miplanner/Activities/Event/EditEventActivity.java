@@ -382,6 +382,11 @@ public class EditEventActivity extends AppCompatActivity {
                 retrofitClient.getEventRepository().update(itemNumber, datEv, tokenID).enqueue(new Callback<Events>() {
                     @Override
                     public void onResponse(Call<Events> call, Response<Events> response) {
+                        if (response.code() != 200) {
+                            Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
+                            progressBar.setVisibility(View.GONE);
+                            return;
+                        }
                         final List<DatumEvents> event = Arrays.asList(response.body().getData());
                         final Calendar calStart = new GregorianCalendar();
                         final Calendar calEnd = new GregorianCalendar();
@@ -396,6 +401,11 @@ public class EditEventActivity extends AppCompatActivity {
                         retrofitClient.getEventPatternRepository().getPatternsById(event.get(0).getId(), tokenID).enqueue(new Callback<Patterns>() {
                             @Override
                             public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                                if (response.code() != 200) {
+                                    Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
+                                    progressBar.setVisibility(View.GONE);
+                                    return;
+                                }
                                 List<DatumPatterns> patts = Arrays.asList(response.body().getData());
                                 DatumPatterns datP;
                                 if (mRrule!=null) {
@@ -417,6 +427,12 @@ public class EditEventActivity extends AppCompatActivity {
                                 retrofitClient.getEventPatternRepository().update(patts.get(0).getId(),datP, tokenID).enqueue(new Callback<Patterns>() {
                                     @Override
                                     public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                                        if (response.code() != 200) {
+                                            Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
+                                            progressBar.setVisibility(View.GONE);
+                                            return;
+                                        }
+
                                         Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
                                         Bundle bundle = new Bundle();
                                         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
@@ -436,21 +452,21 @@ public class EditEventActivity extends AppCompatActivity {
 
                                     @Override
                                     public void onFailure(Call<Patterns> call, Throwable t) {
-
+                                        Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             }
 
                             @Override
                             public void onFailure(Call<Patterns> call, Throwable t) {
-
+                                Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
 
                     @Override
                     public void onFailure(Call<Events> call, Throwable t) {
-
+                        Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
                     }
                 });
 

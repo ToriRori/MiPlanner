@@ -9,8 +9,8 @@ import java.util.Calendar;
 public class DrawableCalendarEvent extends BaseCalendarEvent implements Serializable {
 
     // region Constructors
-    public DrawableCalendarEvent(long id, int color, String title, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
-        super(id, color, title, description, location, rrule, dateStart, dateEnd, allDay, duration);
+    public DrawableCalendarEvent(long id, int color, String title, String owner, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
+        super(id, color, title, owner, description, location, rrule, dateStart, dateEnd, allDay, duration);
     }
 
 

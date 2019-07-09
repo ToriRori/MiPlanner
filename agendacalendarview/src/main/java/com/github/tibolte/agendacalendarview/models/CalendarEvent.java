@@ -44,4 +44,6 @@ public interface CalendarEvent extends Serializable {
     String getLocation();
 
     String getRrule();
+
+    String getOwner();
 }

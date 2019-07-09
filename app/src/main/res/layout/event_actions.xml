@@ -32,6 +32,17 @@
                 android:background="@drawable/corners5"
                 android:textColor="@color/theme_primary"
                 android:text="Удалить" />
+
+            <Button
+                android:id="@+id/share_btn"
+                android:layout_width="120dp"
+                android:layout_margin="5dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/delete_btn"
+                android:layout_centerHorizontal="true"
+                android:background="@drawable/corners5"
+                android:textColor="@color/theme_primary"
+                android:text="Поделиться" />
         </RelativeLayout>
     </RelativeLayout>
 </RelativeLayout>

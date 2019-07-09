@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import com.example.miplanner.Activities.Event.AddEventActivity;
 import com.example.miplanner.Activities.Event.EditEventActivity;
+import com.example.miplanner.Activities.InfoTask.AddTaskActivity;
 import com.example.miplanner.Activities.InfoTask.InfoEventActivity;
 import com.example.miplanner.Activities.ShareActivity;
 import com.example.miplanner.Data.CalendarDbHelper;
@@ -373,8 +374,13 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
                     cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
                     String rrule = patt.get(0).getRrule();
-                    DrawableCalendarEvent event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
-                            evs.getName(), evs.getDetails(), evs.getLocation(), rrule, cal1, cal2, false, null);
+                    DrawableCalendarEvent event;
+                    if (!evs.getOwnerId().equals(mAuth.getCurrentUser().getUid()))
+                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.theme_accent),
+                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), rrule, cal1, cal2, false, null);
+                    else
+                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
+                            evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), rrule, cal1, cal2, false, null);
                     eventList.add(event);
                     if (eventList.size() == evsInst.size()) {
                         start = "ok";
@@ -387,8 +393,14 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     Calendar cal2 = new GregorianCalendar();
                     cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
                     cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
-                    DrawableCalendarEvent event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
-                            evs.getName(), evs.getDetails(), evs.getLocation(), "", cal1, cal2, false, null);
+                    DrawableCalendarEvent event;
+                    if (!evs.getOwnerId().equals(mAuth.getCurrentUser().getUid()))
+                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.theme_accent),
+                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), "", cal1, cal2, false, null);
+                    else
+                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
+                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), "", cal1, cal2, false, null);
+
                     eventList.add(event);
                     if (eventList.size() == evsInst.size()) {
                         start = "ok";
@@ -435,6 +447,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                             bundle.putString("time_start", format.format(calStart.getTime()));
                             bundle.putString("time_end",format.format(calEnd.getTime()));
                             bundle.putString("time_end_current", format.format(event.getEndTime().getTime()));
+                            bundle.putString("owner", event.getOwner());
                             bundle.putString("rrule", event.getRrule());
                             bundle.putLong("event_id", event.getId());
 
@@ -492,18 +505,34 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                     retrofitClient.getEventRepository().delete(event.getId(), tokenID).enqueue(new Callback<Void>() {
                         @Override
                         public void onResponse(Call<Void> call, Response<Void> response) {
+                            if (response.code() != 200) {
+                                Toast.makeText(getContext(), "Не удалось удалить событие", Toast.LENGTH_SHORT).show();
+                                progressBar.setVisibility(View.GONE);
+                                return;
+                            }
                             start = null;
-                            progressBar.setVisibility(View.GONE);
                             refreshItems();
                             popupWindow.dismiss();
                         }
 
                         @Override
                         public void onFailure(Call<Void> call, Throwable t) {
-
+                            Toast.makeText(getContext(), "Не удалось удалить событие", Toast.LENGTH_SHORT).show();
                         }
                     });
                 }});
+            Button btnShare = popupView.findViewById(R.id.share_btn);
+            btnShare.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getActivity(), ShareActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putLong("id", event.getId());
+                    intent.putExtras(bundle);
+                    startActivity(intent);
+                    getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
+                }
+            });
             popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
         }
     }
@@ -537,8 +566,8 @@ public class CalendarController extends Fragment implements CalendarPickerContro
                         bundle.putString("start_time", format2.format(cal1.getTime()));
                         bundle.putString("end_date", format1.format(cal2.getTime()));
                         bundle.putString("end_time", format2.format(cal2.getTime()));
-
                         bundle.putString("rrule", patt.get(0).getRrule());
+
                         intent.putExtras(bundle);
                         progressBar.setVisibility(View.GONE);
                         startActivity(intent);
