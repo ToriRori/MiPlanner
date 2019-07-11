@@ -46,4 +46,10 @@ public interface CalendarEvent extends Serializable {
     String getRrule();
 
     String getOwner();
+
+    long getDuration();
+
+    Calendar getDateEndGlobal();
+
+    Calendar getDateStartGlobal();
 }

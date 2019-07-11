@@ -28,6 +28,7 @@ import com.example.miplanner.POJO.Tasks;
 import com.example.miplanner.R;
 import com.example.miplanner.RetrofitClient;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
@@ -52,6 +53,7 @@ public class ShareActivity extends AppCompatActivity {
     FirebaseAuth mAuth;
     String tokenId = null;
     ProgressBar progressBar;
+    final int[] count = {0};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +66,11 @@ public class ShareActivity extends AppCompatActivity {
 
         Button share_btn = findViewById(R.id.button_share);
         share_btn.setOnClickListener(shareListener);
+    }
+
+    private void badRequestHandle() {
+        progressBar.setVisibility(View.GONE);
+        Toast.makeText(ShareActivity.this, "Не удалось получить токен", Toast.LENGTH_SHORT).show();
     }
 
     View.OnClickListener shareListener = new View.OnClickListener() {
@@ -91,154 +98,146 @@ public class ShareActivity extends AppCompatActivity {
             }
 
             final Bundle bundle = getIntent().getExtras();
-            if (bundle.getString("start") != null) {
+            if (bundle.getSerializable("start") != null) {
 
-                final Calendar calStart = new GregorianCalendar();
-                final Calendar calEnd = new GregorianCalendar();
-                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-                try {
-                    calStart.setTime(format.parse(bundle.getString("start")));
-                    calEnd.setTime(format.parse(bundle.getString("end")));
-                } catch (ParseException e) {
-                    e.printStackTrace();
+                if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+                    mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<GetTokenResult> task) {
+                            if (!task.isSuccessful()) {
+                                Toast.makeText(ShareActivity.this, "Не удалось получить ссылку", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            tokenId = task.getResult().getToken();
+                            shareAllEvents();
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            badRequestHandle();
+                        }
+                    });
                 }
-                mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<GetTokenResult> task) {
-                        tokenId = task.getResult().getToken();
-                        final int[] count = {0};
-                        final List<RequestPermission> permissions = new ArrayList<>();
-                        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                        retrofitClient.getEventRepository().getEventsByInterval(calStart.getTimeInMillis(), calEnd.getTimeInMillis(), tokenId).enqueue(new Callback<Events>() {
-                            @Override
-                            public void onResponse(Call<Events> call, Response<Events> response) {
-                                final List<DatumEvents> events = Arrays.asList(response.body().getData());
-                                for (int i = 0; i < events.size(); i++) {
-                                    final int iter = i;
-                                    retrofitClient.getEventPatternRepository().getPatternsById(events.get(i).getId(), tokenId).enqueue(new Callback<Patterns>() {
-                                        @Override
-                                        public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                                            final List<DatumPatterns> patts = Arrays.asList(response.body().getData());
-                                            retrofitClient.getTasksRepository().getTasksByEventId(events.get(iter).getId(), tokenId).enqueue(new Callback<Tasks>() {
-                                                @Override
-                                                public void onResponse(Call<Tasks> call, Response<Tasks> response) {
-                                                    final List<DatumTasks> tasks = Arrays.asList(response.body().getData());
-                                                        if (readType.isChecked()) {
-                                                            permissions.add(new RequestPermission("READ", events.get(iter).getId(),"EVENT"));
-                                                            permissions.add(new RequestPermission("READ", patts.get(0).getId(),"PATTERN"));
-                                                            if (eventsTasksType.getId() == entityTypeId)
-                                                                for (int j = 0; j < tasks.size(); j++)
-                                                                permissions.add(new RequestPermission("READ", tasks.get(j).getId(),"TASK"));
-                                                        }
-                                                        if (updateType.isChecked()) {
-                                                            permissions.add(new RequestPermission("UPDATE", events.get(iter).getId(),"EVENT"));
-                                                            permissions.add(new RequestPermission("UPDATE", patts.get(0).getId(),"PATTERN"));
-                                                            if (eventsTasksType.getId() == entityTypeId)
-                                                                for (int j = 0; j < tasks.size(); j++)
-                                                                permissions.add(new RequestPermission("UPDATE", tasks.get(j).getId(),"TASK"));
-                                                        }
-                                                        if (deleteType.isChecked()) {
-                                                            permissions.add(new RequestPermission("DELETE", events.get(iter).getId(),"EVENT"));
-                                                            permissions.add(new RequestPermission("DELETE", patts.get(0).getId(),"PATTERN"));
-                                                            if (eventsTasksType.getId() == entityTypeId)
-                                                                for (int j = 0; j < tasks.size(); j++)
-                                                                permissions.add(new RequestPermission("DELETE", tasks.get(j).getId(),"TASK"));
-                                                        }
-                                                        count[0]++;
-                                                        if (count[0] == events.size())
-                                                            showToken(permissions);
-                                                    }
-
-                                                @Override
-                                                public void onFailure(Call<Tasks> call, Throwable t) {
-
-                                                }
-                                            });
-                                        }
-
-                                        @Override
-                                        public void onFailure(Call<Patterns> call, Throwable t) {
-
-                                        }
-                                    });
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(Call<Events> call, Throwable t) {
-
-                            }
-                        });
-                    }
-                });
-
+                else {
+                    tokenId = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+                    shareAllEvents();
+                }
             }
             else {
                 final Long id = bundle.getLong("id");
+
                 final List<RequestPermission> permissions = new ArrayList<>();
                 final RetrofitClient retrofitClient = RetrofitClient.getInstance();
                 mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
                     @Override
                     public void onComplete(@NonNull Task<GetTokenResult> task) {
                         tokenId = task.getResult().getToken();
-                        retrofitClient.getEventPatternRepository().getPatternsById(id, tokenId).enqueue(new Callback<Patterns>() {
-                            @Override
-                            public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                                final List<DatumPatterns> patts = Arrays.asList(response.body().getData());
-                                retrofitClient.getTasksRepository().getTasksByEventId(id, tokenId).enqueue(new Callback<Tasks>() {
-                                    @Override
-                                    public void onResponse(Call<Tasks> call, Response<Tasks> response) {
-                                        List<DatumTasks> tasks = Arrays.asList(response.body().getData());
-                                        if (readType.isChecked()) {
-                                            permissions.add(new RequestPermission("READ", id, "EVENT"));
-                                            permissions.add(new RequestPermission("READ", patts.get(0).getId(), "PATTERN"));
-
-                                            if (eventsTasksType.getId() == entityTypeId)
-                                                for (int j = 0; j < tasks.size(); j++)
-                                                    permissions.add(new RequestPermission("READ", tasks.get(j).getId(),"TASK"));
-                                        }
-                                        if (updateType.isChecked()) {
-                                            permissions.add(new RequestPermission("UPDATE", id,"EVENT"));
-                                            permissions.add(new RequestPermission("UPDATE", patts.get(0).getId(),"PATTERN"));
-                                            if (eventsTasksType.getId() == entityTypeId)
-                                                for (int j = 0; j < tasks.size(); j++)
-                                                    permissions.add(new RequestPermission("UPDATE", tasks.get(j).getId(),"TASK"));
-                                        }
-                                        if (deleteType.isChecked()) {
-                                            permissions.add(new RequestPermission("DELETE", id,"EVENT"));
-                                            permissions.add(new RequestPermission("DELETE", patts.get(0).getId(),"PATTERN"));
-                                            if (eventsTasksType.getId() == entityTypeId)
-                                                for (int j = 0; j < tasks.size(); j++)
-                                                    permissions.add(new RequestPermission("DELETE", tasks.get(j).getId(),"TASK"));
-                                        }
-                                        showToken(permissions);
-                                    }
-
-                                    @Override
-                                    public void onFailure(Call<Tasks> call, Throwable t) {
-
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onFailure(Call<Patterns> call, Throwable t) {
-
-                            }
-                        });
+                        count[0] = 0;
+                        createPermissionsForEvent(id, permissions, 1);
                     }
                 });
             }
         }
     };
 
-    public void showToken(List<RequestPermission> permissions) {
+    private void shareAllEvents() {
+        Bundle bundle = getIntent().getExtras();
+        final Calendar calStart = (Calendar) bundle.getSerializable("start");
+        final Calendar calEnd = (Calendar) bundle.getSerializable("end");
+
+        final List<RequestPermission> permissions = new ArrayList<>();
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        count[0] = 0;
+        retrofitClient.getEventRepository().getEventsByInterval(calStart.getTimeInMillis(), calEnd.getTimeInMillis(), tokenId).enqueue(new Callback<Events>() {
+            @Override
+            public void onResponse(Call<Events> call, Response<Events> response) {
+                final List<DatumEvents> events = Arrays.asList(response.body().getData());
+                for (int i = 0; i < events.size(); i++) {
+                    createPermissionsForEvent(events.get(i).getId(), permissions, events.size());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Events> call, Throwable t) {
+
+            }
+        });
+    }
+
+    private void  createPermissionsForEvent(final long evenetId, final List<RequestPermission> permissions, final int size) {
+        final RadioGroup entityType = findViewById(R.id.sharing_type);
+        final RadioButton eventsType = findViewById(R.id.events_type);
+        final RadioButton eventsTasksType = findViewById(R.id.events_tasks_type);
+
+        final int entityTypeId = entityType.getCheckedRadioButtonId();
+
+        final CheckBox readType = findViewById(R.id.read_type);
+        final CheckBox updateType = findViewById(R.id.update_type);
+        final CheckBox deleteType = findViewById(R.id.delete_type);
+
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getEventPatternRepository().getPatternsById(evenetId, tokenId).enqueue(new Callback<Patterns>() {
+            @Override
+            public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                final List<DatumPatterns> patts = Arrays.asList(response.body().getData());
+                retrofitClient.getTasksRepository().getTasksByEventId(evenetId, tokenId).enqueue(new Callback<Tasks>() {
+                    @Override
+                    public void onResponse(Call<Tasks> call, Response<Tasks> response) {
+                        if (response.isSuccessful()) {
+                            final List<DatumTasks> tasks = Arrays.asList(response.body().getData());
+                            if (readType.isChecked()) {
+                                permissions.add(new RequestPermission("READ", evenetId, "EVENT"));
+                                permissions.add(new RequestPermission("READ", patts.get(0).getId(), "PATTERN"));
+                                if (eventsTasksType.getId() == entityTypeId)
+                                    for (int j = 0; j < tasks.size(); j++)
+                                        permissions.add(new RequestPermission("READ", tasks.get(j).getId(), "TASK"));
+                            }
+                            if (updateType.isChecked()) {
+                                permissions.add(new RequestPermission("UPDATE", evenetId, "EVENT"));
+                                permissions.add(new RequestPermission("UPDATE", patts.get(0).getId(), "PATTERN"));
+                                if (eventsTasksType.getId() == entityTypeId)
+                                    for (int j = 0; j < tasks.size(); j++)
+                                        permissions.add(new RequestPermission("UPDATE", tasks.get(j).getId(), "TASK"));
+                            }
+                            if (deleteType.isChecked()) {
+                                permissions.add(new RequestPermission("DELETE", evenetId, "EVENT"));
+                                permissions.add(new RequestPermission("DELETE", patts.get(0).getId(), "PATTERN"));
+                                if (eventsTasksType.getId() == entityTypeId)
+                                    for (int j = 0; j < tasks.size(); j++)
+                                        permissions.add(new RequestPermission("DELETE", tasks.get(j).getId(), "TASK"));
+                            }
+                            count[0]++;
+                            if (count[0] == size)
+                                showToken(permissions);
+                        }
+                        else {
+                            badRequestHandle();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Tasks> call, Throwable t) {
+                        badRequestHandle();
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Call<Patterns> call, Throwable t) {
+                badRequestHandle();
+            }
+        });
+    }
+
+    private void showToken(List<RequestPermission> permissions) {
         RequestPermission[] permissionsArr = new RequestPermission[permissions.size()];
         permissions.toArray(permissionsArr);
         RetrofitClient retrofitClient = RetrofitClient.getInstance();
         retrofitClient.getSharingRepository().getShareLink(permissionsArr, tokenId).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (!response.isSuccessful()) {
+                    badRequestHandle();
+                }
                 String shareLink = null;
                 try {
                     shareLink = response.body().string();
@@ -249,7 +248,7 @@ public class ShareActivity extends AppCompatActivity {
                 shareLink = temp[temp.length-1];
                 AlertDialog.Builder builder = new AlertDialog.Builder(ShareActivity.this);
                 final String finalShareLink = shareLink;
-                builder.setTitle("Поделитесь ссылкой с другом")
+                builder.setTitle("Поделитесь токеном с другом")
                         .setMessage(shareLink)
                         .setCancelable(false)
                         .setNegativeButton("Cкопировать",
@@ -277,7 +276,7 @@ public class ShareActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-
+                badRequestHandle();
             }
         });
     }

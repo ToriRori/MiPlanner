@@ -12,6 +12,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         setContentView(R.layout.activity_main);
         progressBar = findViewById(R.id.progressBar);
 
@@ -95,7 +97,6 @@ public class MainActivity extends AppCompatActivity
                 signOut();
             }
         });
-
     }
 
     @Override
@@ -129,7 +130,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void updateUI(GoogleSignInAccount account) {
+    private void updateUI(GoogleSignInAccount account) {
         NavigationView navigationView = findViewById(R.id.nav_view);
         View headerLayout = navigationView.getHeaderView(0);
         LinearLayout accountInfo = headerLayout.findViewById(R.id.account_info);
@@ -218,8 +219,10 @@ public class MainActivity extends AppCompatActivity
                 });
         if (navigationView.getCheckedItem() != null)
             navigationView.getCheckedItem().setChecked(false);
-        for (int i = 0; i < this.getSupportFragmentManager().getBackStackEntryCount(); i++)
-            this.getSupportFragmentManager().popBackStack();
+        List<Fragment> fragments = this.getSupportFragmentManager().getFragments();
+        for (Fragment fragment : fragments) {
+            this.getSupportFragmentManager().beginTransaction().remove(fragment).commit();
+        }
     }
 
     @Override

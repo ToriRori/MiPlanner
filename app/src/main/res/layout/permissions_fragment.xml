@@ -13,6 +13,20 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/corners5"
+            android:textColor="@color/theme_primary"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginTop="2dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:id="@+id/activate"
+            android:text="Активировать"/>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -32,18 +46,8 @@
             android:layout_weight="10"
             android:background="@color/white"/>
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/corners5"
-            android:textColor="@color/theme_primary"
-            android:layout_weight="1"
-            android:layout_marginRight="2dp"
-            android:layout_marginTop="2dp"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:id="@+id/activate"
-            android:text="Активировать"/>
+
+
     </LinearLayout>
 
     <View

@@ -58,7 +58,7 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
     /**
      * Duration of the event.
      */
-    private String mDuration;
+    private long mDuration;
     /**
      * References to a DayItem instance for that event, used to link interaction between the
      * calendar view and the agenda view.
@@ -82,9 +82,14 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
 
     private String mOwner;
 
+    private Calendar dateStartGlobal;
+
+    private Calendar dateEndGlobal;
+
     // region Constructor
 
-    public BaseCalendarEvent(long id, int color, String title, String owner, String description, String location, String rrule, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
+    public BaseCalendarEvent(long id, int color, String title, String owner, String description, String location, String rrule,
+                             Calendar dateStart, Calendar dateEnd, Calendar dateStartGlobal, Calendar dateEndGlobal, boolean allDay, long duration) {
         this.mId = id;
         this.mColor = color;
         this.mAllDay = allDay;
@@ -96,6 +101,8 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
         this.mRrule = rrule;
         this.mStartTime = dateStart;
         this.mEndTime = dateEnd;
+        this.dateEndGlobal = dateEndGlobal;
+        this.dateStartGlobal = dateStartGlobal;
     }
 
 
@@ -112,7 +119,7 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
      * @param allDay      Int that can be equal to 0 or 1.
      * @param duration    The duration of the event in RFC2445 format.
      */
-    public BaseCalendarEvent(long id, int color, String title, String description, String location, Calendar dateStart, Calendar dateEnd, boolean allDay, String duration) {
+    public BaseCalendarEvent(long id, int color, String title, String description, String location, Calendar dateStart, Calendar dateEnd, boolean allDay, long duration) {
         this.mId = id;
         this.mColor = color;
         this.mAllDay = allDay;
@@ -169,6 +176,10 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
         this.mStartTime.setTime(calendarEvent.getStartTime().getTime());
         this.mEndTime = new GregorianCalendar();
         this.mEndTime.setTime(calendarEvent.getEndTime().getTime());
+        this.dateStartGlobal = new GregorianCalendar();
+        this.dateEndGlobal = new GregorianCalendar();
+        this.dateStartGlobal.setTime(calendarEvent.getDateStartGlobal().getTime());
+        this.dateEndGlobal.setTime(calendarEvent.getDateEndGlobal().getTime());
     }
 
     /**
@@ -241,6 +252,22 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
         this.mId = mId;
     }
 
+    public Calendar getDateStartGlobal() {
+        return dateStartGlobal;
+    }
+
+    public void setDateStartGlobal(Calendar dateStartGlobal) {
+        this.dateStartGlobal = dateStartGlobal;
+    }
+
+    public Calendar getDateEndGlobal() {
+        return dateEndGlobal;
+    }
+
+    public void setDateEndGlobal(Calendar dateEndGlobal) {
+        this.dateEndGlobal = dateEndGlobal;
+    }
+
     public String getLocation() {
         return mLocation;
     }
@@ -265,11 +292,11 @@ public class BaseCalendarEvent implements CalendarEvent, Serializable {
         this.mTitle = mTitle;
     }
 
-    public String getDuration() {
+    public long getDuration() {
         return mDuration;
     }
 
-    public void setDuration(String duration) {
+    public void setDuration(long duration) {
         this.mDuration = duration;
     }
 

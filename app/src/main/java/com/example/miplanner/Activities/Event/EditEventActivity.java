@@ -24,6 +24,7 @@ import com.example.miplanner.POJO.Patterns;
 import com.example.miplanner.R;
 import com.example.miplanner.RetrofitClient;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.TimeZone;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -44,7 +46,6 @@ import retrofit2.Response;
 
 public class EditEventActivity extends AppCompatActivity {
 
-    //private CalendarDbHelper mDbHelper;
     String tokenID = null;
     ProgressBar progressBar;
 
@@ -56,18 +57,9 @@ public class EditEventActivity extends AppCompatActivity {
 
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
-        final TimePicker tpStart = findViewById(R.id.timePickerStart);
-        final DatePicker dpStart = findViewById(R.id.datePickerStart);
-        final TimePicker tpEnd = findViewById(R.id.timePickerEnd);
-        final DatePicker dpEnd = findViewById(R.id.datePickerEnd);
-        final EditText et = findViewById(R.id.nameText);
-        final EditText descEt = findViewById(R.id.descriptionText);
-        final EditText locEt = findViewById(R.id.locationText);
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
         final Button addBtn = findViewById(R.id.buttonAddEvent);
 
-        //mDbHelper = new CalendarDbHelper(this);
-        //final Event event = mDbHelper.getEventById((int)itemNumber);
         initFields();
 
         repeatbtn.setOnClickListener(repeatListener);
@@ -87,21 +79,15 @@ public class EditEventActivity extends AppCompatActivity {
                 descriptionEvent.clearFocus();
                 locationText.clearFocus();
 
-                final String selectedStart = dpStart.getDayOfMonth() + "." + (dpStart.getMonth() + 1) + "." + dpStart.getYear() + " " + tpStart.getHour() + ":" + tpStart.getMinute();
-                final String selectdEnd = dpEnd.getDayOfMonth() + "." + (dpEnd.getMonth() + 1) + "." + dpEnd.getYear() + " " + tpEnd.getHour() + ":" + tpEnd.getMinute();
-
-                String rrule = getRrule();
+                EventService service = new EventService();
+                String rrule = service.getRrule(repeatbtn, getIntent().getExtras());
 
                 //check dates correct
-                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
                 Calendar calStart = new GregorianCalendar();
                 Calendar calEnd = new GregorianCalendar();
-                try {
-                    calStart.setTime(format.parse(selectedStart));
-                    calEnd.setTime(format.parse(selectdEnd));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                calStart.set(dpStart.getYear(), dpStart.getMonth(), dpStart.getDayOfMonth(), tpStart.getHour(), tpStart.getMinute());
+                calEnd.set(dpEnd.getYear(), dpEnd.getMonth(), dpEnd.getDayOfMonth(), tpEnd.getHour(), tpEnd.getMinute());
+
                 if (calStart.after(calEnd)) {
                     Toast.makeText(EditEventActivity.this, "Некорректные дата начала и дата конца события", Toast.LENGTH_SHORT).show();
                     return;
@@ -117,7 +103,6 @@ public class EditEventActivity extends AppCompatActivity {
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
-
                     switch (rule.getFreq()) {
                         case DAILY:
                             temp.add(Calendar.DAY_OF_YEAR, rule.getInterval());
@@ -133,12 +118,12 @@ public class EditEventActivity extends AppCompatActivity {
                             break;
                     }
                     if (temp.before(calEnd)) {
-                        Toast.makeText(EditEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(EditEventActivity.this, "Некорректное повторение события для данных дат начала и конца",
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                 }
                 if (nameEvent.getText().toString().replaceAll("[\\s\\d]", "").length() <= 0)
-                    //mDbHelper.editEventById((int) itemNumber, nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
                     Toast.makeText(EditEventActivity.this, "Название события не валидно", Toast.LENGTH_SHORT).show();
 
                 progressBar.setVisibility(View.VISIBLE);
@@ -147,86 +132,30 @@ public class EditEventActivity extends AppCompatActivity {
         });
     }
 
-    public void initFields() {
+    private void initFields() {
         final TimePicker tpStart = findViewById(R.id.timePickerStart);
         final DatePicker dpStart = findViewById(R.id.datePickerStart);
         final TimePicker tpEnd = findViewById(R.id.timePickerEnd);
         final DatePicker dpEnd = findViewById(R.id.datePickerEnd);
-        final EditText et = findViewById(R.id.nameText);
-        final EditText descEt = findViewById(R.id.descriptionText);
-        final EditText locEt = findViewById(R.id.locationText);
+        final EditText nameText = findViewById(R.id.nameText);
+        final EditText descriptionText = findViewById(R.id.descriptionText);
+        final EditText locationText = findViewById(R.id.locationText);
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
+        tpStart.setIs24HourView(true);
+        tpEnd.setIs24HourView(true);
+
 
         final Bundle bundle = getIntent().getExtras();
         final String rrule = bundle.getString("rrule");
-        final String   startDate = bundle.getString("start_date");
-        final String endDate = bundle.getString("end_date");
-        final String startTime = bundle.getString("start_time");
-        final String endTime = bundle.getString("end_time");
+        final Calendar startDate = (Calendar) bundle.getSerializable("start_date");
+        final Calendar endDate = (Calendar) bundle.getSerializable("end_date");
         final String name = bundle.getString("name");
         final String descr = bundle.getString("descr");
         final String loc = bundle.getString("loc");
 
-        if (startDate != null) {
-            String[] part = startDate.split("\\.");
-            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
-        }
-
-        if (endDate != null) {
-            String[] part = endDate.split("\\.");
-            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
-        }
-
-        if (startTime != null) {
-            String[] part = startTime.split(":");
-            tpStart.setHour(Integer.parseInt(part[0]));
-            tpStart.setMinute(Integer.parseInt(part[1]));
-        }
-
-        if (endTime != null) {
-            String[] part = endTime.split(":");
-            tpEnd.setHour(Integer.parseInt(part[0]));
-            tpEnd.setMinute(Integer.parseInt(part[1]));
-        }
-
-        if (name != null) {
-            et.setText(name);
-        }
-
-        if (descr != null) {
-            descEt.setText(descr);
-        }
-
-        if (loc != null) {
-            locEt.setText(loc);
-        }
-
-        if (rrule != null) {
-            RRule rule = null;
-            try {
-                rule = new RRule("RRULE:"+rrule);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            if (rule.getCount() == 0 && rule.getUntil() == null) {
-                if (rule.getFreq() == Frequency.DAILY && rule.getInterval() == 1)
-                    repeatbtn.setText("Каждый день");
-                else if (rule.getFreq() == Frequency.WEEKLY && rule.getInterval() == 1)
-                    repeatbtn.setText("Каждую неделю");
-                else if (rule.getFreq() == Frequency.MONTHLY && rule.getInterval() == 1)
-                    repeatbtn.setText("Каждый месяц");
-                else if (rule.getFreq() == Frequency.YEARLY && rule.getInterval() == 1)
-                    repeatbtn.setText("Каждый год");
-                else
-                    repeatbtn.setText("Другое...");
-            }
-            else
-                repeatbtn.setText("Другое...");
-        }
-
-        tpStart.setIs24HourView(true);
-        tpEnd.setIs24HourView(true);
-
+        EventService service = new EventService();
+        service.initEventsFields(dpStart, dpEnd, tpStart, tpEnd, startDate, endDate, name, nameText, descr, descriptionText, loc, locationText,
+                rrule, repeatbtn);
     }
 
     View.OnClickListener repeatListener = new View.OnClickListener() {
@@ -245,54 +174,28 @@ public class EditEventActivity extends AppCompatActivity {
                     popupView,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT, true);
-            Button noRep = popupView.findViewById(R.id.noRepeat);
-            Button dayRep = popupView.findViewById(R.id.dayRepeat);
-            Button weekRep = popupView.findViewById(R.id.weekRepeat);
-            Button monthRep = popupView.findViewById(R.id.monthRepeat);
-            Button yearRep = popupView.findViewById(R.id.yearRepeat);
-            Button othRep = popupView.findViewById(R.id.otherRepeat);
+            Button weekBtns[] = new Button[6];
+            weekBtns[0] = popupView.findViewById(R.id.noRepeat);
+            weekBtns[1] = popupView.findViewById(R.id.dayRepeat);
+            weekBtns[2] = popupView.findViewById(R.id.weekRepeat);
+            weekBtns[3] = popupView.findViewById(R.id.monthRepeat);
+            weekBtns[4] = popupView.findViewById(R.id.yearRepeat);
+            weekBtns[5] = popupView.findViewById(R.id.otherRepeat);
 
-            noRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Не повторяется");
-                }
-            });
+            final String[] weekText = {"Не повторяется", "Каждый день", "Каждую неделю", "Каждый месяц", "Каждый год"};
 
-            dayRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждый день");
-                }
-            });
+            for (int i = 0; i < 5; i++) {
+                final int finalI = i;
+                weekBtns[i].setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        repeatbtn.setText(weekText[finalI]);
+                    }
+                });
+            }
 
-            weekRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждую неделю");
-                }
-            });
-
-            monthRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждый месяц");
-                }
-            });
-
-            yearRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждый год");
-                }
-            });
-
-            othRep.setOnClickListener(new View.OnClickListener() {
+            weekBtns[5].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     DatePicker dpStart = findViewById(R.id.datePickerStart);
@@ -300,27 +203,25 @@ public class EditEventActivity extends AppCompatActivity {
                     DatePicker dpEnd = findViewById(R.id.datePickerEnd);
                     TimePicker tpEnd = findViewById(R.id.timePickerEnd);
 
-                    String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear();
-                    String selectedEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear();
-                    String selectedStartt = tpStart.getHour()+":"+tpStart.getMinute();
-                    String selectedEndt = tpEnd.getHour()+":"+tpEnd.getMinute();
-
-                    popupWindow.dismiss();
+                    Calendar calStart = new GregorianCalendar();
+                    Calendar calEnd = new GregorianCalendar();
+                    calStart.set(dpStart.getYear(), dpStart.getMonth(), dpStart.getDayOfMonth(), tpStart.getHour(), tpStart.getMinute());
+                    calEnd.set(dpEnd.getYear(), dpEnd.getMonth(), dpEnd.getDayOfMonth(), tpEnd.getHour(), tpEnd.getMinute());
 
                     Intent intent = new Intent(EditEventActivity.this, RepeatEventActivity.class);
-                    intent.putExtra("start_date", selectedStart);
-                    intent.putExtra("end_date", selectedEnd);
+                    intent.putExtra("start_date", calStart);
+                    intent.putExtra("end_date", calEnd);
                     intent.putExtra("name", et.getText().toString());
-                    intent.putExtra("start_time", selectedStartt);
-                    intent.putExtra("end_time", selectedEndt);
                     intent.putExtra("descr", descEt.getText().toString());
                     intent.putExtra("loc", locEt.getText().toString());
                     intent.putExtra("event_id", bundle.getLong("event_id"));
-                    intent.putExtra("edit", "ok");
+                    intent.putExtra("edit", " ");
                     if (bundle.getString("rrule") != null) {
-                        intent.putExtra("ok", "ok");
+                        intent.putExtra("filled", true);
                         intent.putExtra("rrule", bundle.getString("rrule"));
                     }
+
+                    popupWindow.dismiss();
                     startActivity(intent);
                 }
             });
@@ -329,35 +230,12 @@ public class EditEventActivity extends AppCompatActivity {
         }
     };
 
-    public String getRrule() {
-        String rrule = "";
-        final Button repeatbtn = findViewById(R.id.buttonRepeat);
-        switch (repeatbtn.getText().toString()) {
-            case "Не повторяется":
-                rrule = null;
-                break;
-            case "Каждый день":
-                rrule = "FREQ=DAILY;INTERVAL=1;";
-                break;
-            case "Каждую неделю":
-                rrule = "FREQ=WEEKLY;INTERVAL=1;";
-                break;
-            case "Каждый месяц":
-                rrule = "FREQ=MONTHLY;INTERVAL=1;";
-                break;
-            case "Каждый год":
-                rrule = "FREQ=YEARLY;INTERVAL=1;";
-                break;
-            case "Другое...":
-                Bundle bundle = getIntent().getExtras();
-                rrule = bundle.getString("rrule");
-                break;
-        }
-        return rrule;
+    private void badRequestHandle() {
+        progressBar.setVisibility(View.GONE);
+        Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
     }
 
-
-    public void requestForEdit(final String mRrule) {
+    private void requestForEdit(final String mRrule) {
         final TimePicker tpStart = findViewById(R.id.timePickerStart);
         final DatePicker dpStart = findViewById(R.id.datePickerStart);
         final TimePicker tpEnd = findViewById(R.id.timePickerEnd);
@@ -368,160 +246,117 @@ public class EditEventActivity extends AppCompatActivity {
         Bundle bundle = getIntent().getExtras();
         final Long itemNumber = bundle.getLong("event_id");
 
-        final String selectedStart = dpStart.getDayOfMonth() + "." + (dpStart.getMonth() + 1) + "." + dpStart.getYear() + " " + tpStart.getHour() + ":" + tpStart.getMinute();
-        final String selectdEnd = dpEnd.getDayOfMonth() + "." + (dpEnd.getMonth() + 1) + "." + dpEnd.getYear() + " " + tpEnd.getHour() + ":" + tpEnd.getMinute();
+        final Calendar calStart = new GregorianCalendar();
+        final Calendar calEnd = new GregorianCalendar();
+        calStart.set(dpStart.getYear(), dpStart.getMonth(), dpStart.getDayOfMonth(), tpStart.getHour(), tpStart.getMinute());
+        calEnd.set(dpEnd.getYear(), dpEnd.getMonth(), dpEnd.getDayOfMonth(), tpEnd.getHour(), tpEnd.getMinute());
 
-        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
         final DatumEvents datEv = new DatumEvents(descEt.getText().toString(), locEt.getText().toString(), et.getText().toString(), "");
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
-            @Override
-            public void onComplete(@NonNull Task<GetTokenResult> task) {
-                tokenID = task.getResult().getToken();
 
-                retrofitClient.getEventRepository().update(itemNumber, datEv, tokenID).enqueue(new Callback<Events>() {
+        if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                @Override
+                public void onComplete(@NonNull Task<GetTokenResult> task) {
+                    if (!task.isSuccessful()) {
+                        badRequestHandle();
+                        return;
+                    }
+                    tokenID = task.getResult().getToken();
+                    editEventnPattern(itemNumber, datEv, mRrule, calStart, calEnd);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    badRequestHandle();
+                }
+            });
+        }
+        else {
+            tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+            editEventnPattern(itemNumber, datEv, mRrule, calStart, calEnd);
+        }
+    }
+
+    private void editEventnPattern(final long id, DatumEvents datEv, final String mRrule, final Calendar calStart, final Calendar calEnd) {
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getEventRepository().update(id, datEv, tokenID).enqueue(new Callback<Events>() {
+            @Override
+            public void onResponse(Call<Events> call, Response<Events> response) {
+                if (!response.isSuccessful()) {
+                    badRequestHandle();
+                    return;
+                }
+                final List<DatumEvents> event = Arrays.asList(response.body().getData());
+
+                final String finalRule = mRrule;
+                retrofitClient.getEventPatternRepository().getPatternsById(id, tokenID).enqueue(new Callback<Patterns>() {
                     @Override
-                    public void onResponse(Call<Events> call, Response<Events> response) {
-                        if (response.code() != 200) {
-                            Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
-                            progressBar.setVisibility(View.GONE);
+                    public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                        if (!response.isSuccessful()) {
+                            badRequestHandle();
                             return;
                         }
-                        final List<DatumEvents> event = Arrays.asList(response.body().getData());
-                        final Calendar calStart = new GregorianCalendar();
-                        final Calendar calEnd = new GregorianCalendar();
-                        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                        try {
-                            calStart.setTime(format.parse(selectedStart));
-                            calEnd.setTime(format.parse(selectdEnd));
-                        } catch (ParseException e) {
-                            e.printStackTrace();
+                        List<DatumPatterns> patts = Arrays.asList(response.body().getData());
+                        DatumPatterns datP;
+                        if (mRrule!=null) {
+                            RRule r = null;
+                            try {
+                                r = new RRule("RRULE:"+mRrule);
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            long endOfEvent;
+                            if (r.getUntil() == null && r.getCount() == 0)
+                                endOfEvent = Long.MAX_VALUE;
+                            else {
+                                EventService service = new EventService();
+                                endOfEvent = service.getEnd(calEnd, r).getTimeInMillis();
+                            }
+                            datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), endOfEvent, "",
+                                    mRrule,calStart.getTimeInMillis(), TimeZone.getDefault().getID());
                         }
-                        final String finalRule = mRrule;
-                        retrofitClient.getEventPatternRepository().getPatternsById(event.get(0).getId(), tokenID).enqueue(new Callback<Patterns>() {
+                        else
+                            datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(),
+                                    "", finalRule,calStart.getTimeInMillis(),TimeZone.getDefault().getID());
+
+                        retrofitClient.getEventPatternRepository().update(patts.get(0).getId(),datP, tokenID).enqueue(new Callback<Patterns>() {
                             @Override
                             public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                                if (response.code() != 200) {
+                                if (!response.isSuccessful()) {
                                     Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
                                     progressBar.setVisibility(View.GONE);
                                     return;
                                 }
-                                List<DatumPatterns> patts = Arrays.asList(response.body().getData());
-                                DatumPatterns datP;
-                                if (mRrule!=null) {
-                                    RRule r = null;
-                                    try {
-                                        r = new RRule("RRULE:"+mRrule);
-                                    } catch (ParseException e) {
-                                        e.printStackTrace();
-                                    }
-                                    if (r.getUntil() == null && r.getCount() == 0)
-                                        datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
-                                    else {
-                                        Calendar calendarEnd = getEnd(calEnd, r);
-                                        datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), calendarEnd.getTimeInMillis(), "", finalRule, calStart.getTimeInMillis(), "Asia/Vladivostok");
-                                    }
-                                }
-                                else
-                                    datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", finalRule,calStart.getTimeInMillis(),"Asia/Vladivostok");
-                                retrofitClient.getEventPatternRepository().update(patts.get(0).getId(),datP, tokenID).enqueue(new Callback<Patterns>() {
-                                    @Override
-                                    public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                                        if (response.code() != 200) {
-                                            Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
-                                            progressBar.setVisibility(View.GONE);
-                                            return;
-                                        }
 
-                                        Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
-                                        Bundle bundle = new Bundle();
-                                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                                        Calendar cal = new GregorianCalendar();
-                                        try {
-                                            cal.setTime(dateFormat.parse(selectedStart));
-                                        } catch (ParseException e) {
-                                            e.printStackTrace();
-                                        }
-                                        bundle.putString("Date", dateFormat.format(calStart.getTime()));
+                                Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
+                                Bundle bundle = new Bundle();
+                                bundle.putString("Date", " ");
 
-                                        intent.putExtras(bundle);
-                                        progressBar.setVisibility(View.GONE);
-                                        startActivity(intent);
-                                        overridePendingTransition (R.anim.enter, R.anim.exit);
-                                    }
-
-                                    @Override
-                                    public void onFailure(Call<Patterns> call, Throwable t) {
-                                        Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                                intent.putExtras(bundle);
+                                progressBar.setVisibility(View.GONE);
+                                startActivity(intent);
+                                overridePendingTransition (R.anim.enter, R.anim.exit);
                             }
 
                             @Override
                             public void onFailure(Call<Patterns> call, Throwable t) {
-                                Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
+                                badRequestHandle();
                             }
                         });
                     }
 
                     @Override
-                    public void onFailure(Call<Events> call, Throwable t) {
-                        Toast.makeText(EditEventActivity.this, "Не удалось изменить событие", Toast.LENGTH_SHORT).show();
+                    public void onFailure(Call<Patterns> call, Throwable t) {
+                        badRequestHandle();
                     }
                 });
+            }
 
+            @Override
+            public void onFailure(Call<Events> call, Throwable t) {
+                badRequestHandle();
             }
         });
-
-
-
-                    /*Intent intent = new Intent(EditEventActivity.this, MainActivity.class);
-                    Bundle bundle = new Bundle();
-                    //bundle.putParcelableArray("events", events);
-                    //bundle.putInt("size", size);
-                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                    Calendar cal = new GregorianCalendar();
-                    try {
-                        cal.setTime(dateFormat.parse(selectedStart));
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                    dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-                    bundle.putString("Date", dateFormat.format(cal.getTime()));
-                    dateFormat = new SimpleDateFormat("HH");
-                    bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
-                    intent.putExtras(bundle);
-                    startActivity(intent);
-                    overridePendingTransition (R.anim.enter, R.anim.exit);*/
-    }
-
-    public Calendar getEnd(Calendar calendar, RRule r) {
-        Calendar cal = new GregorianCalendar();
-        cal.setTime(calendar.getTime());
-        if (r.getUntil() == null)
-            switch (r.getFreq()){
-                case DAILY:
-                    cal.add(Calendar.DAY_OF_MONTH, r.getInterval()*r.getCount());
-                    break;
-                case WEEKLY:
-                    cal.add(Calendar.WEEK_OF_YEAR, r.getInterval()*r.getCount());
-                    break;
-                case MONTHLY:
-                    cal.add(Calendar.MONTH, r.getInterval()*r.getCount());
-                    break;
-                case YEARLY:
-                    cal.add(Calendar.YEAR, r.getInterval()*r.getCount());
-                    break;
-            }
-        else {
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-            try {
-                cal.setTime(format.parse(r.getUntil().day()+"."+r.getUntil().month()+"."+r.getUntil().year()));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return cal;
     }
 }

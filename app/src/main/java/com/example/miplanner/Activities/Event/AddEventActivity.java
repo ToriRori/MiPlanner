@@ -5,6 +5,8 @@ import android.icu.util.TimeZone;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.CardView;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,20 +26,25 @@ import com.example.miplanner.POJO.Events;
 import com.example.miplanner.POJO.Patterns;
 import com.example.miplanner.R;
 import com.example.miplanner.RetrofitClient;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.ical.values.RRule;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -46,7 +53,6 @@ import retrofit2.Response;
 
 public class AddEventActivity extends AppCompatActivity {
 
-    //private CalendarDbHelper mDbHelper;
     String tokenID = null;
     ProgressBar progressBar;
 
@@ -58,7 +64,8 @@ public class AddEventActivity extends AppCompatActivity {
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
-        //mDbHelper = new CalendarDbHelper(this);
+        CardView googlePlaces = findViewById(R.id.idCardView);
+        googlePlaces.setVisibility(View.GONE);
 
         initFields();
 
@@ -72,29 +79,22 @@ public class AddEventActivity extends AppCompatActivity {
                 TimePicker tpStart = findViewById(R.id.timePickerStart);
                 DatePicker dpEnd = findViewById(R.id.datePickerEnd);
                 TimePicker tpEnd = findViewById(R.id.timePickerEnd);
-                EditText descriptionEvent = findViewById(R.id.descriptionText);
+                EditText descriptionText = findViewById(R.id.descriptionText);
                 EditText locationText = findViewById(R.id.locationText);
 
                 nameEvent.clearFocus();
-                descriptionEvent.clearFocus();
+                descriptionText.clearFocus();
                 locationText.clearFocus();
 
-                //get start/end dates
-                final String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear()+" "+tpStart.getHour()+":"+tpStart.getMinute();
-                final String selectdEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+tpEnd.getHour()+":"+tpEnd.getMinute();
-
-                String rrule = getRrule();
+                EventService service = new EventService();
+                String rrule = service.getRrule(repeatbtn, getIntent().getExtras());
 
                 //check dates correct
-                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
                 Calendar calStart = new GregorianCalendar();
                 Calendar calEnd = new GregorianCalendar();
-                try {
-                    calStart.setTime(format.parse(selectedStart));
-                    calEnd.setTime(format.parse(selectdEnd));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                calStart.set(dpStart.getYear(), dpStart.getMonth(), dpStart.getDayOfMonth(), tpStart.getHour(), tpStart.getMinute());
+                calEnd.set(dpEnd.getYear(), dpEnd.getMonth(), dpEnd.getDayOfMonth(), tpEnd.getHour(), tpEnd.getMinute());
+
                 if (calStart.after(calEnd)) {
                     Toast.makeText(AddEventActivity.this, "Некорректные дата начала и дата конца события", Toast.LENGTH_SHORT).show();
                     return;
@@ -125,11 +125,11 @@ public class AddEventActivity extends AppCompatActivity {
                             break;
                     }
                     if (temp.before(calEnd)) {
-                        Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AddEventActivity.this, "Некорректное повторение события для данных дат начала и конца",
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                 }
-
                 if (nameEvent.getText().toString().replaceAll("[\\s\\d]", "").length() <= 0) {
                     Toast.makeText(AddEventActivity.this, "Название события не корректно", Toast.LENGTH_SHORT).show();
                     return;
@@ -140,114 +140,69 @@ public class AddEventActivity extends AppCompatActivity {
         });
     }
 
-    public String getRrule() {
-        String rrule = "";
-        final Button repeatbtn = findViewById(R.id.buttonRepeat);
-        switch (repeatbtn.getText().toString()) {
-            case "Не повторяется":
-                rrule = null;
-                break;
-            case "Каждый день":
-                rrule = "FREQ=DAILY;INTERVAL=1;";
-                break;
-            case "Каждую неделю":
-                rrule = "FREQ=WEEKLY;INTERVAL=1;";
-                break;
-            case "Каждый месяц":
-                rrule = "FREQ=MONTHLY;INTERVAL=1;";
-                break;
-            case "Каждый год":
-                rrule = "FREQ=YEARLY;INTERVAL=1;";
-                break;
-            case "Другое...":
-                Bundle bundle = getIntent().getExtras();
-                rrule = bundle.getString("rrule");
-                break;
-        }
-        return rrule;
-    }
 
-    public void initFields() {
+    private void initFields() {
         final Button repeatbtn = findViewById(R.id.buttonRepeat);
         TimePicker tpStart = findViewById(R.id.timePickerStart);
         DatePicker dpStart = findViewById(R.id.datePickerStart);
         TimePicker tpEnd = findViewById(R.id.timePickerEnd);
         DatePicker dpEnd = findViewById(R.id.datePickerEnd);
-        final EditText et = findViewById(R.id.nameText);
-        final EditText descriptionEvent = findViewById(R.id.descriptionText);
+        final EditText nameText = findViewById(R.id.nameText);
+        final EditText descriptionText = findViewById(R.id.descriptionText);
         final EditText locationText = findViewById(R.id.locationText);
         tpStart.setIs24HourView(true);
         tpEnd.setIs24HourView(true);
 
         final Bundle bundle = getIntent().getExtras();
-        String date = bundle.getString("day");
-        String startDate = bundle.getString("start_date");
-        String endDate = bundle.getString("end_date");
-        String startTime = bundle.getString("start_time");
-        String endTime = bundle.getString("end_time");
+        Calendar date = (Calendar) bundle.getSerializable("day");
+        Calendar startDate = (Calendar) bundle.getSerializable("start_date");
+        Calendar endDate = (Calendar) bundle.getSerializable("end_date");
         String name = bundle.getString("name");
         String descr = bundle.getString("descr");
         String loc = bundle.getString("loc");
+        String rrule = bundle.getString("rrule");
 
         if (date != null) {
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-            Calendar cal = new GregorianCalendar();
-            try {
-                cal.setTime(format.parse(date));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            dpStart.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), null);
-            dpEnd.init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), null);
+            dpStart.init(date.get(Calendar.YEAR), date.get(Calendar.MONTH), date.get(Calendar.DAY_OF_MONTH), null);
+            dpEnd.init(date.get(Calendar.YEAR), date.get(Calendar.MONTH), date.get(Calendar.DAY_OF_MONTH), null);
             tpStart.setHour(0);
             tpStart.setMinute(0);
             tpEnd.setHour(0);
             tpEnd.setMinute(0);
         }
 
-        if (startDate != null) {
-            String[] part = startDate.split("\\.");
-            dpStart.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
-        }
+        EventService service = new EventService();
+        service.initEventsFields(dpStart, dpEnd, tpStart, tpEnd, startDate, endDate, name, nameText, descr, descriptionText, loc, locationText,
+                rrule, repeatbtn);
 
-        if (endDate != null) {
-            String[] part = endDate.split("\\.");
-            dpEnd.init(Integer.parseInt(part[2]), Integer.parseInt(part[1])-1, Integer.parseInt(part[0]), null);
-        }
+        Places.initialize(getApplicationContext(), getResources().getString(R.string.API_key));
+        PlacesClient placesClient = Places.createClient(this);
 
-        if (startTime != null) {
-            String[] part = startTime.split(":");
-            tpStart.setHour(Integer.parseInt(part[0]));
-            tpStart.setMinute(Integer.parseInt(part[1]));
-        }
+        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
+                getSupportFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
 
-        if (endTime != null) {
-            String[] part = endTime.split(":");
-            tpEnd.setHour(Integer.parseInt(part[0]));
-            tpEnd.setMinute(Integer.parseInt(part[1]));
-        }
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
 
-        if (name != null) {
-            et.setText(name);
-        }
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(@NonNull com.google.android.libraries.places.api.model.Place place) {
+                locationText.setText(place.getName() + "," + place.getId());
+                Log.i("Mi", "Place: " + place.getName() + ", " + place.getId());
+            }
 
-        if (descr != null) {
-            descriptionEvent.setText(descr);
-        }
+            @Override
+            public void onError(Status status) {
+                Log.i("Mi", "An error occurred: " + status);
+            }
+        });
 
-        if (loc != null) {
-            locationText.setText(loc);
-        }
-
-        if (bundle.getString("rrule") != null)
-            repeatbtn.setText("Другое...");
     }
 
     View.OnClickListener repeatListener  =  new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            final EditText et = findViewById(R.id.nameText);
-            final EditText descriptionEvent = findViewById(R.id.descriptionText);
+            final EditText nameText = findViewById(R.id.nameText);
+            final EditText descriptionText = findViewById(R.id.descriptionText);
             final EditText locationText = findViewById(R.id.locationText);
             final Button repeatbtn = findViewById(R.id.buttonRepeat);
             LayoutInflater layoutInflater
@@ -257,54 +212,27 @@ public class AddEventActivity extends AppCompatActivity {
                     popupView,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT, true);
-            Button noRep = popupView.findViewById(R.id.noRepeat);
-            Button dayRep = popupView.findViewById(R.id.dayRepeat);
-            Button weekRep = popupView.findViewById(R.id.weekRepeat);
-            Button monthRep = popupView.findViewById(R.id.monthRepeat);
-            Button yearRep = popupView.findViewById(R.id.yearRepeat);
-            Button othRep = popupView.findViewById(R.id.otherRepeat);
+            Button weekBtns[] = new Button[6];
+            weekBtns[0] = popupView.findViewById(R.id.noRepeat);
+            weekBtns[1] = popupView.findViewById(R.id.dayRepeat);
+            weekBtns[2] = popupView.findViewById(R.id.weekRepeat);
+            weekBtns[3] = popupView.findViewById(R.id.monthRepeat);
+            weekBtns[4] = popupView.findViewById(R.id.yearRepeat);
+            weekBtns[5] = popupView.findViewById(R.id.otherRepeat);
 
-            noRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Не повторяется");
-                }
-            });
+            final String[] weekText = {"Не повторяется", "Каждый день", "Каждую неделю", "Каждый месяц", "Каждый год"};
 
-            dayRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждый день");
-                }
-            });
-
-            weekRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждую неделю");
-                }
-            });
-
-            monthRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждый месяц");
-                }
-            });
-
-            yearRep.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    popupWindow.dismiss();
-                    repeatbtn.setText("Каждый год");
-                }
-            });
-
-            othRep.setOnClickListener(new View.OnClickListener() {
+            for (int i = 0; i < 5; i++) {
+                final int finalI = i;
+                weekBtns[i].setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        popupWindow.dismiss();
+                        repeatbtn.setText(weekText[finalI]);
+                    }
+                });
+            }
+            weekBtns[5].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     DatePicker dpStart = findViewById(R.id.datePickerStart);
@@ -312,27 +240,25 @@ public class AddEventActivity extends AppCompatActivity {
                     DatePicker dpEnd = findViewById(R.id.datePickerEnd);
                     TimePicker tpEnd = findViewById(R.id.timePickerEnd);
 
-                    String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear();
-                    String selectedEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear();
-                    String selectedStartt = tpStart.getHour()+":"+tpStart.getMinute();
-                    String selectedEndt = tpEnd.getHour()+":"+tpEnd.getMinute();
-
-                    popupWindow.dismiss();
+                    Calendar calStart = new GregorianCalendar();
+                    Calendar calEnd = new GregorianCalendar();
+                    calStart.set(dpStart.getYear(), dpStart.getMonth(), dpStart.getDayOfMonth(), tpStart.getHour(), tpStart.getMinute());
+                    calEnd.set(dpEnd.getYear(), dpEnd.getMonth(), dpEnd.getDayOfMonth(), tpEnd.getHour(), tpEnd.getMinute());
 
                     Intent intent = new Intent(AddEventActivity.this, RepeatEventActivity.class);
-                    intent.putExtra("start_date", selectedStart);
-                    intent.putExtra("end_date", selectedEnd);
-                    intent.putExtra("name", et.getText().toString());
-                    intent.putExtra("start_time", selectedStartt);
-                    intent.putExtra("end_time", selectedEndt);
-                    intent.putExtra("descr", descriptionEvent.getText().toString());
+                    intent.putExtra("start_date", calStart);
+                    intent.putExtra("end_date", calEnd);
+                    intent.putExtra("name", nameText.getText().toString());
+                    intent.putExtra("descr", descriptionText.getText().toString());
                     intent.putExtra("loc", locationText.getText().toString());
 
                     Bundle bundle = getIntent().getExtras();
                     if (bundle.getString("rrule") != null) {
                         intent.putExtra("rrule", bundle.getString("rrule"));
-                        intent.putExtra("ok", "ok");
+                        intent.putExtra("filled", true);
                     }
+
+                    popupWindow.dismiss();
                     startActivity(intent);
                 }
             });
@@ -341,156 +267,114 @@ public class AddEventActivity extends AppCompatActivity {
         }
     };
 
-    public void requestForAdd(final String mRrule) {
-        final Button repeatbtn = findViewById(R.id.buttonRepeat);
+    private void badRequestHandle() {
+        progressBar.setVisibility(View.GONE);
+        Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
+    }
+
+    private void requestForAdd(final String mRrule) {
         TimePicker tpStart = findViewById(R.id.timePickerStart);
         DatePicker dpStart = findViewById(R.id.datePickerStart);
         TimePicker tpEnd = findViewById(R.id.timePickerEnd);
         DatePicker dpEnd = findViewById(R.id.datePickerEnd);
         final EditText et = findViewById(R.id.nameText);
-        final EditText descriptionEvent = findViewById(R.id.descriptionText);
+        final EditText descriptionText = findViewById(R.id.descriptionText);
         final EditText locationText = findViewById(R.id.locationText);
 
-        final String selectedStart = dpStart.getDayOfMonth()+"."+(dpStart.getMonth()+1)+"."+dpStart.getYear()+" "+tpStart.getHour()+":"+tpStart.getMinute();
-        final String selectdEnd = dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+tpEnd.getHour()+":"+tpEnd.getMinute();
+        final Calendar calStart = new GregorianCalendar();
+        final Calendar calEnd = new GregorianCalendar();
+        calStart.set(dpStart.getYear(), dpStart.getMonth(), dpStart.getDayOfMonth(), tpStart.getHour(), tpStart.getMinute());
+        calEnd.set(dpEnd.getYear(), dpEnd.getMonth(), dpEnd.getDayOfMonth(), tpEnd.getHour(), tpEnd.getMinute());
 
-
-
-        //mDbHelper.insertEvent(nameEvent.getText().toString(), descriptionEvent.getText().toString(), locationText.getText().toString(), repeat, end_repeat, selectedStart, selectdEnd);
-        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-        final DatumEvents datEv = new DatumEvents(descriptionEvent.getText().toString(), locationText.getText().toString(), et.getText().toString(), "");
+        final DatumEvents datEv = new DatumEvents(
+            descriptionText.getText().toString(), locationText.getText().toString(), et.getText().toString(), "");
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         progressBar.setVisibility(View.VISIBLE);
-        mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+        if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false).getResult().getToken() == null) {
+            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                @Override
+                public void onComplete(@NonNull Task<GetTokenResult> task) {
+                    if (!task.isSuccessful()) {
+                        badRequestHandle();
+                        return;
+                    }
+                    tokenID = task.getResult().getToken();
+                    addEventnPattern(datEv, mRrule, calStart, calEnd);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    badRequestHandle();
+                }
+            });
+        }
+        else {
+            tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+            addEventnPattern(datEv, mRrule, calStart, calEnd);
+        }
+    }
+
+    private void addEventnPattern(DatumEvents datEv, final String mRrule, final Calendar calStart, final Calendar calEnd) {
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getEventRepository().save(datEv, tokenID).enqueue(new Callback<Events>() {
             @Override
-            public void onComplete(@NonNull Task<GetTokenResult> task) {
-                tokenID = task.getResult().getToken();
-                retrofitClient.getEventRepository().save(datEv,tokenID).enqueue(new Callback<Events>() {
-                    @Override
-                    public void onResponse(Call<Events> call, Response<Events> response) {
-                        if (response.code() != 200) {
-                            Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
-                            progressBar.setVisibility(View.GONE);
-                            return;
-                        }
-                        List<DatumEvents> event = Arrays.asList(response.body().getData());
-                        final Calendar calStart = new GregorianCalendar();
-                        Calendar calEnd = new GregorianCalendar();
-                        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                        try {
-                            calStart.setTime(format.parse(selectedStart));
-                            calEnd.setTime(format.parse(selectdEnd));
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
-                        String rule = mRrule;
+            public void onResponse(Call<Events> call, Response<Events> response) {
+                if (!response.isSuccessful()) {
+                    badRequestHandle();
+                    return;
+                }
+                List<DatumEvents> event = Arrays.asList(response.body().getData());
 
-                        DatumPatterns datP;
-                        if (mRrule!=null) {
-                            RRule r = null;
-                            try {
-                                r = new RRule("RRULE:"+mRrule);
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                            if (r.getUntil() == null && r.getCount() == 0)
-                                datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), Long.MAX_VALUE-1, "", rule,calStart.getTimeInMillis(), TimeZone.getDefault().getID());
-                            else {
-                                Calendar calendarEnd = getEnd(calEnd, r);
-                                datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), calendarEnd.getTimeInMillis(), "", rule, calStart.getTimeInMillis(), TimeZone.getDefault().getID());
-                            }
-                        }
-                        else
-                            datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(), "", null,calStart.getTimeInMillis(),TimeZone.getDefault().getID());
-                        retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP,tokenID).enqueue(new Callback<Patterns>() {
-                            @Override
-                            public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                                if (response.code() != 200) {
-                                    Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
-                                    progressBar.setVisibility(View.GONE);
-                                    return;
-                                }
-                                Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
-                                Bundle bundle = new Bundle();
-
-                                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                                Calendar cal = new GregorianCalendar();
-                                try {
-                                    cal.setTime(dateFormat.parse(selectedStart));
-                                } catch (ParseException e) {
-                                    e.printStackTrace();
-                                }
-                                bundle.putString("Date", dateFormat.format(calStart.getTime()));
-                                intent.putExtras(bundle);
-                                progressBar.setVisibility(View.GONE);
-                                startActivity(intent);
-                                overridePendingTransition (R.anim.enter, R.anim.exit);
-                            }
-
-                            @Override
-                            public void onFailure(Call<Patterns> call, Throwable t) {
-                                Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(Call<Events> call, Throwable t) {
-                        Toast.makeText(AddEventActivity.this, "Не удалось добавить событие", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-
-            }
-        });
-                    /*Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
-                    Bundle bundle = new Bundle();
-
-                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                    Calendar cal = new GregorianCalendar();
+                DatumPatterns datP;
+                if (mRrule!=null) {
+                    RRule r = null;
                     try {
-                        cal.setTime(dateFormat.parse(selectedStart));
+                        r = new RRule("RRULE:"+mRrule);
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
-                    dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-                    bundle.putString("Date", dateFormat.format(cal.getTime()));
-                    dateFormat = new SimpleDateFormat("HH");
-                    bundle.putInt("Position", Integer.parseInt(dateFormat.format(cal.getTime())));
-                    intent.putExtras(bundle);
+                    long endOfEvent;
+                    if (r.getUntil() == null && r.getCount() == 0)
+                        endOfEvent = Long.MAX_VALUE;
+                    else {
+                        EventService service = new EventService();
+                        endOfEvent = service.getEnd(calEnd, r).getTimeInMillis();
+                    }
+                    datP = new DatumPatterns(calEnd.getTimeInMillis() - calStart.getTimeInMillis(), endOfEvent, "",
+                            mRrule,calStart.getTimeInMillis(), TimeZone.getDefault().getID());
+                }
+                else
+                    datP = new DatumPatterns(calEnd.getTimeInMillis()-calStart.getTimeInMillis(), calEnd.getTimeInMillis(),
+                            "", null,calStart.getTimeInMillis(),TimeZone.getDefault().getID());
 
-                    startActivity(intent);
-                    overridePendingTransition (R.anim.enter, R.anim.exit);
-                    */
-    }
+                retrofitClient.getEventPatternRepository().save(event.get(0).getId(),datP,tokenID).enqueue(new Callback<Patterns>() {
+                    @Override
+                    public void onResponse(Call<Patterns> call, Response<Patterns> response) {
+                        if (!response.isSuccessful()) {
+                            badRequestHandle();
+                            return;
+                        }
+                        Intent intent = new Intent(AddEventActivity.this, MainActivity.class);
+                        Bundle bundle = new Bundle();
 
-    public Calendar getEnd(Calendar calendar, RRule r) {
-        Calendar cal = new GregorianCalendar();
-        cal.setTime(calendar.getTime());
-        if (r.getUntil() == null)
-            switch (r.getFreq()){
-                case DAILY:
-                    cal.add(Calendar.DAY_OF_MONTH, r.getInterval()*r.getCount());
-                    break;
-                case WEEKLY:
-                    cal.add(Calendar.WEEK_OF_YEAR, r.getInterval()*r.getCount());
-                    break;
-                case MONTHLY:
-                    cal.add(Calendar.MONTH, r.getInterval()*r.getCount());
-                    break;
-                case YEARLY:
-                    cal.add(Calendar.YEAR, r.getInterval()*r.getCount());
-                    break;
+                        bundle.putString("Date", " ");
+                        intent.putExtras(bundle);
+                        progressBar.setVisibility(View.GONE);
+                        startActivity(intent);
+                        overridePendingTransition (R.anim.enter, R.anim.exit);
+                    }
+
+                    @Override
+                    public void onFailure(Call<Patterns> call, Throwable t) {
+                        badRequestHandle();
+                    }
+                });
             }
-        else {
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-            try {
-                cal.setTime(format.parse(r.getUntil().day()+"."+r.getUntil().month()+"."+r.getUntil().year()));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        }
 
-        return cal;
+            @Override
+            public void onFailure(Call<Events> call, Throwable t) {
+                badRequestHandle();
+            }
+        });
     }
 }

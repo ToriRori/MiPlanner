@@ -3,14 +3,16 @@ package com.example.miplanner.Fragments.Calendar;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.AsyncLayoutInflater;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,10 +26,8 @@ import android.widget.Toast;
 
 import com.example.miplanner.Activities.Event.AddEventActivity;
 import com.example.miplanner.Activities.Event.EditEventActivity;
-import com.example.miplanner.Activities.InfoTask.AddTaskActivity;
 import com.example.miplanner.Activities.InfoTask.InfoEventActivity;
 import com.example.miplanner.Activities.ShareActivity;
-import com.example.miplanner.Data.CalendarDbHelper;
 import com.example.miplanner.Fragments.OnSwipeTouchListener;
 import com.example.miplanner.POJO.DatumEvents;
 import com.example.miplanner.POJO.DatumEventsInstances;
@@ -41,6 +41,7 @@ import com.github.tibolte.agendacalendarview.CalendarPickerController;
 import com.github.tibolte.agendacalendarview.models.CalendarEvent;
 import com.github.tibolte.agendacalendarview.models.DayItem;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
@@ -48,13 +49,11 @@ import com.google.firebase.auth.GetTokenResult;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
@@ -62,17 +61,23 @@ import java.util.TimeZone;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static android.app.Activity.RESULT_OK;
+import static android.content.ContentValues.TAG;
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
 public class CalendarController extends Fragment implements CalendarPickerController {
 
-    private CalendarDbHelper mDbHelper;
+    private static final int FILE_SELECT_CODE = 1003;
     private static int REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION = 1001;
+    private static int REQUEST_CODE_READ_EXTERNAL_STORAGE_PERMISSION = 1002;
 
     @Bind(R.id.agenda_calendar_view)
     AgendaCalendarView mAgendaCalendarView;
@@ -84,7 +89,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     List<DatumPatterns> patt = null;
     List<CalendarEvent> eventList = new ArrayList<>();
 
-    String start = null;
+    boolean flagIsLoaded = false;
     String tokenID = null;
 
     FirebaseAuth mAuth;
@@ -114,7 +119,7 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             public void onSwipeRight() {
                 minDate.add(Calendar.YEAR, -1);
                 maxDate.add(Calendar.YEAR, -1);
-                start = null;
+                flagIsLoaded = false;
                 refreshItems();
             }
 
@@ -122,13 +127,13 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             public void onSwipeLeft() {
                 minDate.add(Calendar.YEAR, 1);
                 maxDate.add(Calendar.YEAR, 1);
-                start = null;
+                flagIsLoaded = false;
                 refreshItems();
             }
 
         });
 
-        if (start == null) {
+        if (!flagIsLoaded) {
             getEvents();
         }
 
@@ -220,18 +225,32 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         btn_export.setOnClickListener(exportListener);
         ImageButton btn_share = view.findViewById(R.id.button_share);
         btn_share.setOnClickListener(shareListener);
-
+        ImageButton btn_import = view.findViewById(R.id.button_import);
+        btn_import.setOnClickListener(importListener);
+        ImageButton btn_refresh = view.findViewById(R.id.button_refresh);
+        btn_refresh.setOnClickListener(refreshListener);
         return view;
     }
+
+    private void badRequest(String message) {
+        progressBar.setVisibility(View.GONE);
+        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    View.OnClickListener refreshListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            refreshItems();
+        }
+    };
 
     View.OnClickListener addListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             Intent intent = new Intent(getActivity(), AddEventActivity.class);
-            DayItem day = mAgendaCalendarView.getSelectedDay();
-            Date date = day.getDate();
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-            intent.putExtra("day", format.format(date));
+            Calendar calendar = new GregorianCalendar();
+            calendar.setTime(mAgendaCalendarView.getSelectedDay().getDate());
+            intent.putExtra("day", calendar);
             startActivity(intent);
             getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
         }
@@ -242,14 +261,111 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         public void onClick(View v) {
             Intent intent = new Intent(getActivity(), ShareActivity.class);
             Bundle bundle = new Bundle();
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-            bundle.putString("start", format.format(minDate.getTime()));
-            bundle.putString("end", format.format(maxDate.getTime()));
+            bundle.putSerializable("start", minDate);
+            bundle.putSerializable("end", maxDate);
             intent.putExtras(bundle);
             startActivity(intent);
             getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
         }
     };
+
+    View.OnClickListener importListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("*/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+            try {
+                startActivityForResult(
+                        Intent.createChooser(intent, "Select a File to Upload"),
+                        FILE_SELECT_CODE);
+            } catch (android.content.ActivityNotFoundException ex) {
+                Toast.makeText(getContext(), "Установите файловый менеджер",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            if (ContextCompat.checkSelfPermission(getContext(),
+                    Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(getActivity(),
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        REQUEST_CODE_READ_EXTERNAL_STORAGE_PERMISSION
+                );
+            }
+        }
+    };
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case FILE_SELECT_CODE:
+                if (resultCode == RESULT_OK) {
+                    Uri uri = data.getData();
+                    String path = null;
+
+                    if (DocumentsContract.isDocumentUri(getContext().getApplicationContext(), uri)) {
+                        if ("com.android.externalstorage.documents".equals(uri.getAuthority())) {
+                            final String docId = DocumentsContract.getDocumentId(uri);
+                            final String[] split = docId.split(":");
+                            path = Environment.getExternalStorageDirectory() + "/" + split[1];
+                        } else if ("com.android.providers.downloads.documents".equals(uri.getAuthority())) {
+                            final String id = DocumentsContract.getDocumentId(uri);
+                            String[] temp = id.split("/", 2);
+                            path = temp[1];
+                            //uri = ContentUris.withAppendedId(
+                            //        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+                        } else if ("com.android.providers.media.documents".equals(uri.getAuthority())) {
+                            final String docId = DocumentsContract.getDocumentId(uri);
+                            final String[] split = docId.split(":");
+                            final String type = split[0];
+                            if ("image".equals(type)) {
+                                uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                            } else if ("video".equals(type)) {
+                                uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                            } else if ("audio".equals(type)) {
+                                uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                            }
+                        }
+                    }
+                    if ("file".equalsIgnoreCase(uri.getScheme())) {
+                        path = uri.getPath();
+                    }
+                    final File file = new File(path);
+                    mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<GetTokenResult> task) {
+                            tokenID = task.getResult().getToken();
+                            RetrofitClient retrofitClient = RetrofitClient.getInstance();
+                            RequestBody requestFile =
+                                    RequestBody.create(MediaType.parse("multipart/form-data"), file);
+                            MultipartBody.Part body =
+                                    MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+                            retrofitClient.getTransfersRepository().sendCalendar(body, tokenID).enqueue(new Callback<Void>() {
+                                @Override
+                                public void onResponse(Call<Void> call, Response<Void> response) {
+                                    try {
+                                        Log.d("_____________", response.errorBody().string());
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    if (response.isSuccessful())
+                                        badRequest("Календарь был успешно сохранен");
+                                    else
+                                        badRequest("Не удалось сохранить календарь");
+                                }
+
+                                @Override
+                                public void onFailure(Call<Void> call, Throwable t) {
+                                    badRequest("Не удалось сохранить календарь");
+                                }
+                            });
+                        }
+                    });
+                }
+                break;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -258,9 +374,19 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         if (requestCode == REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION) {
             int grantResultsLength = grantResults.length;
             if (grantResultsLength > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(getContext(), "You grant write external storage permission. Please click original button again to continue.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Разрешение было успешно получено, пожалуйста нажмите кнопку снова", Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(getContext(), "You denied write external storage permission.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Не удалось получить разрешение", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        if (requestCode == REQUEST_CODE_READ_EXTERNAL_STORAGE_PERMISSION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.i(TAG, "Permission granted!");
+                Toast.makeText(getContext(), "Разрешение было успешно получено, пожалуйста нажмите кнопку снова", Toast.LENGTH_LONG).show();
+            } else {
+                Log.i(TAG, "Permission denied");
+                Toast.makeText(getContext(), "Не удалось получить разрешение", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -268,162 +394,203 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     View.OnClickListener exportListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
-                @Override
-                public void onComplete(@NonNull Task<GetTokenResult> task) {
-                    retrofitClient.getTransfersRepository().getCalendar(tokenID).enqueue(new Callback<ResponseBody>() {
-                        @Override
-                        public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                            String cal = null;
-                            try {
-                                cal = response.body().string();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-
-                            int writeExternalStoragePermission = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                            // If do not grant write external storage permission.
-                            if(writeExternalStoragePermission!= PackageManager.PERMISSION_GRANTED)
-                            {
-                                // Request user to grant write external storage permission.
-                                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION);
-                            }
-
-                            Calendar calendar = new GregorianCalendar();
-                            SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy-HH-mm-ss");
-                            try {
-                                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()  + "/MiCalendar"+format.format(calendar.getTime())+".ics");
-                                file.createNewFile();
-                                FileWriter fileWriter = new FileWriter(file);
-                                fileWriter.write(cal);
-                                fileWriter.flush();
-                                fileWriter.close();
-                                Toast.makeText(getContext(), "Календарь был успешно сохранен", Toast.LENGTH_SHORT).show();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+            progressBar.setVisibility(View.VISIBLE);
+            if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+                mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<GetTokenResult> task) {
+                        if (!task.isSuccessful()) {
+                            badRequest("Не удалось сохранить календарь");
+                            return;
                         }
-                        @Override
-                        public void onFailure(Call<ResponseBody> call, Throwable t) {
-
-                        }
-                    });
-
-                }
-            });
+                        tokenID = task.getResult().getToken();
+                        exportCalendar();
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        badRequest("Не удалось сохранить календарь");
+                    }
+                });
+            }
+            else {
+                tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+                exportCalendar();
+            }
         }
     };
 
-    public void getEvents() {
+    private void exportCalendar() {
         final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-        progressBar.setVisibility(View.VISIBLE);
-        mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+        retrofitClient.getTransfersRepository().getCalendar(tokenID).enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onComplete(@NonNull Task<GetTokenResult> task) {
-                tokenID = task.getResult().getToken();
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (!response.isSuccessful()) {
+                    badRequest("Не удалось сохранить календарь");
+                    return;
+                }
+                String cal = null;
+                try {
+                    cal = response.body().string();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-                retrofitClient.getEventRepository().getInstancesByInterval(minDate.getTimeInMillis(), maxDate.getTimeInMillis(), tokenID).enqueue(new Callback<EventsInstances>() {
-                    @Override
-                    public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
-                        if (response.isSuccessful()) {
-                            if (response.body() != null) {
-                                eventList.clear();
-                                evsInst = Arrays.asList(response.body().getData());
-                                if (evsInst.size() == 0)
-                                    progressBar.setVisibility(View.GONE);
-                                for (int i = 0; i < evsInst.size(); i++) {
-                                    final int fi = i;
-                                    retrofitClient.getEventRepository().getEventsById(new Long[]{evsInst.get(i).getEventId()}, tokenID).enqueue(new Callback<com.example.miplanner.POJO.Events>() {
-                                        @Override
-                                        public void onResponse(Call<com.example.miplanner.POJO.Events> call, Response<com.example.miplanner.POJO.Events> response) {
-                                            if (response.isSuccessful()) {
-                                                evs = Arrays.asList(response.body().getData());
-                                                getEventsPatterns(fi, evs.get(0));
-                                            } else
-                                                evs = null;
-                                        }
+                int writeExternalStoragePermission = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                if(writeExternalStoragePermission!= PackageManager.PERMISSION_GRANTED)
+                    ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION);
 
-                                        @Override
-                                        public void onFailure(Call<com.example.miplanner.POJO.Events> call, Throwable t) {
 
-                                        }
-                                    });
-                                }
-                            }
-                        } else
-                            evs = null;
-                    }
-
-                    @Override
-                    public void onFailure(Call<EventsInstances> call, Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
+                Calendar calendar = new GregorianCalendar();
+                SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy-HH-mm-ss");
+                try {
+                    File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath()  +
+                            "/MiCalendar"+format.format(calendar.getTime())+".ics");
+                    file.createNewFile();
+                    FileWriter fileWriter = new FileWriter(file);
+                    fileWriter.write(cal);
+                    fileWriter.flush();
+                    fileWriter.close();
+                    Toast.makeText(getContext(), "Календарь был успешно сохранен", Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                badRequest("Не удалось сохранить календарь");
             }
         });
     }
 
-    public void getEventsPatterns(final int fi, final DatumEvents evs) {
+    private void getEvents() {
+        progressBar.setVisibility(View.VISIBLE);
+        if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                @Override
+                public void onComplete(@NonNull Task<GetTokenResult> task) {
+                    if (!task.isSuccessful()) {
+                        badRequest("Не удалось получить события");
+                        return;
+                    }
+                    tokenID = task.getResult().getToken();
+                    getInstances();
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    badRequest("Не удалось получить события");
+                }
+            });
+        }
+        else {
+            tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+            getInstances();
+        }
+    }
+
+    private void getInstances() {
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getEventRepository().getInstancesByInterval(minDate.getTimeInMillis(), maxDate.getTimeInMillis(), tokenID).enqueue(
+                new Callback<EventsInstances>() {
+            @Override
+            public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
+                if (response.isSuccessful()) {
+                    if (response.body() != null) {
+                        eventList.clear();
+                        evsInst = Arrays.asList(response.body().getData());
+                        if (evsInst.size() == 0)
+                            progressBar.setVisibility(View.GONE);
+                        for (int i = 0; i < evsInst.size(); i++) {
+                            final int fi = i;
+                            retrofitClient.getEventRepository().getEventsById(new Long[]{evsInst.get(i).getEventId()},
+                                    tokenID).enqueue(new Callback<com.example.miplanner.POJO.Events>() {
+                                @Override
+                                public void onResponse(Call<com.example.miplanner.POJO.Events> call,
+                                                       Response<com.example.miplanner.POJO.Events> response) {
+                                    if (response.isSuccessful()) {
+                                        evs = Arrays.asList(response.body().getData());
+                                        getEventsPatterns(evsInst.get(fi), evs.get(0));
+                                    } else {
+                                        badRequest("Не удалось получить события");
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<com.example.miplanner.POJO.Events> call, Throwable t) {
+                                    badRequest("Не удалось получить события");
+                                }
+                            });
+                        }
+                    }
+                } else {
+                    badRequest("Не удалось получить события");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<EventsInstances> call, Throwable throwable) {
+                badRequest("Не удалось получить события");
+                throwable.printStackTrace();
+            }
+        });
+    }
+
+
+    private void getEventsPatterns(final DatumEventsInstances instEvs, final DatumEvents evs) {
         RetrofitClient retrofitClient = RetrofitClient.getInstance();
-        retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(fi).getEventId(), tokenID).enqueue(new Callback<Patterns>() {
+        retrofitClient.getEventPatternRepository().getPatternsById(instEvs.getEventId(), tokenID).enqueue(new Callback<Patterns>() {
             @Override
             public void onResponse(Call<Patterns> call, Response<Patterns> response) {
                 if (response.isSuccessful()&&(response.body().getData() != null)) {
                     patt = Arrays.asList(response.body().getData());
+
                     Calendar cal1 = new GregorianCalendar();
                     Calendar cal2 = new GregorianCalendar();
                     cal1.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
                     cal2.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
-                    cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
-                    cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
+                    cal1.setTimeInMillis(instEvs.getStartedAt());
+                    cal2.setTimeInMillis(instEvs.getEndedAt());
                     cal1.setTimeZone(TimeZone.getDefault());
                     cal2.setTimeZone(TimeZone.getDefault());
-                    String rrule = patt.get(0).getRrule();
+
+                    Calendar calStart = new GregorianCalendar();
+                    Calendar calEnd = new GregorianCalendar();
+                    calStart.setTimeInMillis(patt.get(0).getStartedAt());
+                    calEnd.setTimeInMillis(patt.get(0).getEndedAt());
+                    calStart.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
+                    calEnd.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
+                    calStart.setTimeInMillis(patt.get(0).getStartedAt());
+                    calEnd.setTimeInMillis(patt.get(0).getEndedAt());
+                    calStart.setTimeZone(TimeZone.getDefault());
+                    calEnd.setTimeZone(TimeZone.getDefault());
+
                     DrawableCalendarEvent event;
+
                     if (!evs.getOwnerId().equals(mAuth.getCurrentUser().getUid()))
-                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.theme_accent),
-                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), rrule, cal1, cal2, false, null);
+                        event = new DrawableCalendarEvent(instEvs.getEventId(), ContextCompat.getColor(getActivity(), R.color.theme_accent),
+                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), patt.get(0).getRrule(), cal1, cal2, calStart, calEnd,
+                                false, cal2.getTimeInMillis()-cal1.getTimeInMillis());
                     else
-                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
-                            evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), rrule, cal1, cal2, false, null);
+                        event = new DrawableCalendarEvent(instEvs.getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
+                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), patt.get(0).getRrule(), cal1, cal2, calStart, calEnd,
+                                false, cal2.getTimeInMillis()-cal1.getTimeInMillis());
+
                     eventList.add(event);
                     if (eventList.size() == evsInst.size()) {
-                        start = "ok";
+                        flagIsLoaded = true;
                         refreshItems();
                     }
 
                 } else {
-                    patt = null;
-                    Calendar cal1 = new GregorianCalendar();
-                    Calendar cal2 = new GregorianCalendar();
-                    cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
-                    cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
-                    cal1.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
-                    cal2.setTimeZone(TimeZone.getTimeZone(ZoneId.of(patt.get(0).getTimezone())));
-                    cal1.setTimeInMillis(evsInst.get(fi).getStartedAt());
-                    cal2.setTimeInMillis(evsInst.get(fi).getEndedAt());
-                    cal1.setTimeZone(TimeZone.getDefault());
-                    cal2.setTimeZone(TimeZone.getDefault());
-                    DrawableCalendarEvent event;
-                    if (!evs.getOwnerId().equals(mAuth.getCurrentUser().getUid()))
-                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.theme_accent),
-                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), "", cal1, cal2, false, null);
-                    else
-                        event = new DrawableCalendarEvent(evsInst.get(fi).getEventId(), ContextCompat.getColor(getActivity(), R.color.calendar_text_first_day_of_month),
-                                evs.getName(), evs.getOwnerId(), evs.getDetails(), evs.getLocation(), "", cal1, cal2, false, null);
-
-                    eventList.add(event);
-                    if (eventList.size() == evsInst.size()) {
-                        start = "ok";
-                        refreshItems();
-                    }
+                    badRequest("Не удалось получить события");
                 }
             }
 
             @Override
             public void onFailure(Call<Patterns> call, Throwable t) {
-
+                badRequest("Не удалось получить события");
             }
         });
     }
@@ -438,52 +605,30 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     public void onEventSelected(final CalendarEvent event) {
         if (!event.getTitle().equals("No events")) {
             progressBar.setVisibility(View.VISIBLE);
-            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
-                @Override
-                public void onComplete(@NonNull Task<GetTokenResult> task) {
-                    RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                    retrofitClient.getEventPatternRepository().getPatternsById(event.getId(), tokenID).enqueue(new Callback<Patterns>() {
-                        @Override
-                        public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                            List<DatumPatterns> patts = Arrays.asList(response.body().getData());
-                            Intent intent = new Intent(getActivity(), InfoEventActivity.class);
-                            Bundle bundle = new Bundle();
-                            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                            Calendar calStart = new GregorianCalendar();
-                            calStart.setTimeInMillis(patts.get(0).getStartedAt());
-                            Calendar calEnd = new GregorianCalendar();
-                            calEnd.setTimeInMillis(patts.get(0).getStartedAt()+patts.get(0).getDuration());
-                            bundle.putString("name", event.getTitle());
-                            bundle.putString("description", event.getDescription());
-                            bundle.putString("location", event.getLocation());
-                            bundle.putString("time_start", format.format(calStart.getTime()));
-                            bundle.putString("time_end",format.format(calEnd.getTime()));
-                            bundle.putString("time_end_current", format.format(event.getEndTime().getTime()));
-                            bundle.putString("owner", event.getOwner());
-                            bundle.putString("rrule", event.getRrule());
-                            bundle.putLong("event_id", event.getId());
+            Intent intent = new Intent(getActivity(), InfoEventActivity.class);
+            Bundle bundle = new Bundle();
+            bundle.putString("name", event.getTitle());
+            bundle.putString("description", event.getDescription());
+            bundle.putString("location", event.getLocation());
+            bundle.putSerializable("time_start", event.getDateStartGlobal());
+            bundle.putSerializable("time_end", event.getDateEndGlobal());
+            bundle.putSerializable("time_start_current", event.getStartTime());
+            bundle.putSerializable("time_end_current", event.getEndTime());
+            bundle.putString("owner", event.getOwner());
+            bundle.putString("rrule", event.getRrule());
+            bundle.putLong("event_id", event.getId());
 
-                            intent.putExtras(bundle);
-                            progressBar.setVisibility(View.GONE);
-                            startActivity(intent);
-                            getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
-                        }
-
-                        @Override
-                        public void onFailure(Call<Patterns> call, Throwable t) {
-
-                        }
-                    });
-                }
-            });
+            intent.putExtras(bundle);
+            progressBar.setVisibility(View.GONE);
+            startActivity(intent);
+            getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
         }
         else {
             Intent intent = new Intent(getActivity(), AddEventActivity.class);
             Bundle bundle = new Bundle();
-
-            Date cal = event.getDayReference().getDate();
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-            bundle.putString("day", format.format(cal));
+            Calendar cal = new GregorianCalendar();
+            cal.setTime(event.getDayReference().getDate());
+            bundle.putSerializable("day", cal);
             intent.putExtras(bundle);
             startActivity(intent);
             getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
@@ -511,27 +656,29 @@ public class CalendarController extends Fragment implements CalendarPickerContro
             btnDelete.setOnClickListener(new Button.OnClickListener(){
                 @Override
                 public void onClick(View v) {
-                    //mDbHelper.deleteEventById((int) event.getId());
                     progressBar.setVisibility(View.VISIBLE);
-                    RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                    retrofitClient.getEventRepository().delete(event.getId(), tokenID).enqueue(new Callback<Void>() {
-                        @Override
-                        public void onResponse(Call<Void> call, Response<Void> response) {
-                            if (response.code() != 200) {
-                                Toast.makeText(getContext(), "Не удалось удалить событие", Toast.LENGTH_SHORT).show();
-                                progressBar.setVisibility(View.GONE);
-                                return;
+                    if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+                        mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<GetTokenResult> task) {
+                                if (!task.isSuccessful()) {
+                                    badRequest("Не удалось удалить событие");
+                                    return;
+                                }
+                                tokenID = task.getResult().getToken();
+                                deleteEvent(event.getId(), popupWindow);
                             }
-                            start = null;
-                            refreshItems();
-                            popupWindow.dismiss();
-                        }
-
-                        @Override
-                        public void onFailure(Call<Void> call, Throwable t) {
-                            Toast.makeText(getContext(), "Не удалось удалить событие", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                badRequest("Не удалось удалить событие");
+                            }
+                        });
+                    }
+                    else {
+                        tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+                        deleteEvent(event.getId(), popupWindow);
+                    }
                 }});
             Button btnShare = popupView.findViewById(R.id.share_btn);
             btnShare.setOnClickListener(new View.OnClickListener() {
@@ -549,58 +696,50 @@ public class CalendarController extends Fragment implements CalendarPickerContro
         }
     }
 
-    public void goToEdit(final CalendarEvent event) {
-        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-        progressBar.setVisibility(View.VISIBLE);
-        retrofitClient.getEventRepository().getInstancesById(new Long[]{event.getId()}, tokenID).enqueue(new Callback<EventsInstances>() {
+    private void deleteEvent(long id, final PopupWindow popupWindow) {
+        RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getEventRepository().delete(id, tokenID).enqueue(new Callback<Void>() {
             @Override
-            public void onResponse(Call<EventsInstances> call, Response<EventsInstances> response) {
-                List<DatumEventsInstances> evsInst = Arrays.asList(response.body().getData());
-                retrofitClient.getEventPatternRepository().getPatternsById(evsInst.get(0).getEventId(), tokenID).enqueue(new Callback<Patterns>() {
-                    @Override
-                    public void onResponse(Call<Patterns> call, Response<Patterns> response) {
-                        List<DatumPatterns> patt = Arrays.asList(response.body().getData());
-                        Intent intent = new Intent(getActivity(), EditEventActivity.class);
-                        Bundle bundle = new Bundle();
-
-                        SimpleDateFormat format1 = new SimpleDateFormat("dd.MM.yyyy");
-                        SimpleDateFormat format2 = new SimpleDateFormat("HH:mm");
-                        Calendar cal1 = new GregorianCalendar();
-                        Calendar cal2 = new GregorianCalendar();
-                        cal1.setTimeInMillis(patt.get(0).getStartedAt());
-                        cal2.setTimeInMillis(patt.get(0).getStartedAt()+patt.get(0).getDuration());
-
-                        bundle.putLong("event_id", event.getId());
-                        bundle.putString("name", event.getTitle());
-                        bundle.putString("descr", ((DrawableCalendarEvent)event).getDescription());
-                        bundle.putString("loc", ((DrawableCalendarEvent)event).getLocation());
-                        bundle.putString("start_date", format1.format(cal1.getTime()));
-                        bundle.putString("start_time", format2.format(cal1.getTime()));
-                        bundle.putString("end_date", format1.format(cal2.getTime()));
-                        bundle.putString("end_time", format2.format(cal2.getTime()));
-                        bundle.putString("rrule", patt.get(0).getRrule());
-
-                        intent.putExtras(bundle);
-                        progressBar.setVisibility(View.GONE);
-                        startActivity(intent);
-                        getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
-                    }
-
-                    @Override
-                    public void onFailure(Call<Patterns> call, Throwable t) {
-
-                    }
-                });
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (!response.isSuccessful()) {
+                    badRequest("Не удалось удалить событие");
+                    return;
+                }
+                flagIsLoaded = false;
+                refreshItems();
+                popupWindow.dismiss();
             }
 
             @Override
-            public void onFailure(Call<EventsInstances> call, Throwable t) {
-
+            public void onFailure(Call<Void> call, Throwable t) {
+                badRequest("Не удалось удалить событие");
             }
         });
     }
 
-    public void refreshItems(){
+    private void goToEdit(final CalendarEvent event) {
+        Intent intent = new Intent(getActivity(), EditEventActivity.class);
+        Bundle bundle = new Bundle();
+
+        Calendar cal = new GregorianCalendar();
+        cal.setTimeInMillis(event.getDateStartGlobal().getTimeInMillis()+event.getDuration());
+
+        bundle.putLong("event_id", event.getId());
+        bundle.putString("name", event.getTitle());
+        bundle.putString("descr", ((DrawableCalendarEvent)event).getDescription());
+        bundle.putString("loc", ((DrawableCalendarEvent)event).getLocation());
+        bundle.putSerializable("start_date", event.getDateStartGlobal());
+        bundle.putSerializable("end_date", cal);
+        bundle.putString("rrule", event.getRrule());
+
+        intent.putExtras(bundle);
+        progressBar.setVisibility(View.GONE);
+        startActivity(intent);
+        getActivity().overridePendingTransition (R.anim.enter, R.anim.exit);
+
+    }
+
+    private void refreshItems(){
         final android.support.v4.app.FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
         fragmentTransaction.detach(this);
         fragmentTransaction.attach(this);
@@ -611,4 +750,5 @@ public class CalendarController extends Fragment implements CalendarPickerContro
     @Override
     public void onScrollToDate(Calendar calendar) {
     }
+
 }

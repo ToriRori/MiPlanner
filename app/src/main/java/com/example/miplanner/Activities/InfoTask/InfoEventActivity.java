@@ -27,6 +27,7 @@ import com.example.miplanner.POJO.Tasks;
 import com.example.miplanner.R;
 import com.example.miplanner.RetrofitClient;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
@@ -72,17 +73,19 @@ public class InfoEventActivity extends AppCompatActivity {
 
         initFields();
 
-        loadTasks();
-
         final ListView tasksList = findViewById(R.id.tasks_list);
 
         tasksList.setOnItemLongClickListener(tasksAdapter);
 
+        loadTasks();
+
         Button btn_add = findViewById(R.id.button_add);
         btn_add.setOnClickListener(addTaskListener);
+    }
 
-        ImageButton btn_back = findViewById(R.id.button_back);
-        btn_back.setOnClickListener(backListener);
+    private void badRequestHandle(String message) {
+        Toast.makeText(InfoEventActivity.this, message, Toast.LENGTH_SHORT).show();
+        progressBar.setVisibility(View.GONE);
     }
 
     AdapterView.OnItemLongClickListener tasksAdapter = new AdapterView.OnItemLongClickListener() {
@@ -109,67 +112,77 @@ public class InfoEventActivity extends AppCompatActivity {
                     bundle1.putString("task_id", hm.get("id"));
                     bundle1.putString("name", bundle.getString("name"));
                     bundle1.putString("description", bundle.getString("description"));
-                    bundle1.putString("location", bundle.getString("locatiion"));
-                    bundle1.putString("time_start", bundle.getString("time_start"));
-                    bundle1.putString("time_end", bundle.getString("time_end"));
+                    bundle1.putString("location", bundle.getString("location"));
+                    bundle1.putSerializable("time_start", bundle.getSerializable("time_start"));
+                    bundle1.putSerializable("time_end", bundle.getSerializable("time_end"));
                     bundle1.putString("rrule", bundle.getString("rrule"));
                     bundle1.putString("owner", bundle.getString("owner"));
-                    bundle1.putString("time_end_current", bundle.getString("time_end_current"));
+                    bundle1.putSerializable("time_end_current", bundle.getSerializable("time_end_current"));
+                    bundle1.putSerializable("time_start_current", bundle.getSerializable("time_start_current"));
                     bundle1.putLong("event_id", event_id);
 
                     intent.putExtras(bundle1);
                     startActivity(intent);
                     overridePendingTransition (R.anim.enter, R.anim.exit);
                 }});
+
             Button btnDelete = popupView.findViewById(R.id.delete_btn);
             btnDelete.setOnClickListener(new Button.OnClickListener(){
                 @Override
                 public void onClick(View v) {
-                    //mDbHelper.deleteEventById((int) event.getId());
                     progressBar.setVisibility(View.VISIBLE);
-                    RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                    HashMap<String, String> hm = (HashMap<String, String>) parent.getItemAtPosition(position);
-                    retrofitClient.getTasksRepository().delete(Long.parseLong(hm.get("id")),tokenID).enqueue(new Callback<Void>() {
-                        @Override
-                        public void onResponse(Call<Void> call, Response<Void> response) {
-                            if (response.code() != 200) {
-                                Toast.makeText(InfoEventActivity.this, "Не удалось удалить задачу", Toast.LENGTH_SHORT).show();
-                                progressBar.setVisibility(View.GONE);
-                                return;
+                    if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+                        mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<GetTokenResult> task) {
+                                if (!task.isSuccessful()) {
+                                    badRequestHandle("Не удалось удалить задачу");
+                                    return;
+                                }
+                                tokenID = task.getResult().getToken();
+                                deleteTask(parent, position);
                             }
-                            Intent intent = getIntent();
-                            finish();
-                            startActivity(intent);
-                            overridePendingTransition (R.anim.enter, R.anim.exit);
-                        }
-
-                        @Override
-                        public void onFailure(Call<Void> call, Throwable t) {
-                            Toast.makeText(InfoEventActivity.this, "Не удалось удалить задачу", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                badRequestHandle("Не удалось удалить задачу");
+                                progressBar.setVisibility(View.GONE);
+                            }
+                        });
+                    }
+                    else {
+                        tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+                        deleteTask(parent, position);
+                    }
                 }});
             popupWindow.showAtLocation(popupView,  Gravity.CENTER, 0, 0);
             return true;
         }
     };
 
-    View.OnClickListener backListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            Intent intent = new Intent(InfoEventActivity.this, MainActivity.class);
-            Bundle bundle = new Bundle();
-            Calendar cal = new GregorianCalendar();
-            DateFormat dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-            bundle.putString("Date", dateFormat.format(cal.getTime()));
-            dateFormat = new SimpleDateFormat("HH");
-            bundle.putString("token", tokenID);
-            intent.putExtras(bundle);
+    private void deleteTask(final AdapterView<?> parent, final int position) {
+        RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        HashMap<String, String> hm = (HashMap<String, String>) parent.getItemAtPosition(position);
+        retrofitClient.getTasksRepository().delete(Long.parseLong(hm.get("id")),tokenID).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (!response.isSuccessful()) {
+                    badRequestHandle("Не удалось удалить задачу");
+                    return;
+                }
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
+                overridePendingTransition (R.anim.enter, R.anim.exit);
+            }
 
-            startActivity(intent);
-            overridePendingTransition (R.anim.enter, R.anim.exit);
-        }
-    };
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                badRequestHandle("Не удалось удалить задачу");
+                progressBar.setVisibility(View.GONE);
+            }
+        });
+    }
 
     View.OnClickListener addTaskListener = new View.OnClickListener() {
         @Override
@@ -179,11 +192,12 @@ public class InfoEventActivity extends AppCompatActivity {
             Bundle bundle1 = new Bundle();
             bundle1.putString("name", bundle.getString("name"));
             bundle1.putString("description", bundle.getString("description"));
-            bundle1.putString("location", bundle.getString("locatiion"));
-            bundle1.putString("time_start", bundle.getString("time_start"));
-            bundle1.putString("time_end", bundle.getString("time_end"));
+            bundle1.putString("location", bundle.getString("location"));
+            bundle1.putSerializable("time_start", bundle.getSerializable("time_start"));
+            bundle1.putSerializable("time_end", bundle.getSerializable("time_end"));
             bundle1.putString("rrule", bundle.getString("rrule"));
-            bundle1.putString("time_end_current", bundle.getString("time_end_current"));
+            bundle1.putSerializable("time_end_current", bundle.getSerializable("time_end_current"));
+            bundle1.putSerializable("time_start_current", bundle.getSerializable("time_start_current"));
             bundle1.putString("owner", bundle.getString("owner"));
             bundle1.putLong("event_id", event_id);
             intent.putExtras(bundle);
@@ -193,54 +207,79 @@ public class InfoEventActivity extends AppCompatActivity {
         }
     };
 
-    public void loadTasks() {
+    private void loadTasks() {
+        if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                @Override
+                public void onComplete(@NonNull Task<GetTokenResult> task) {
+                    if (!task.isSuccessful()) {
+                        badRequestHandle("Не удаловсь загрузить задачи");
+                        return;
+                    }
+                    tokenID = task.getResult().getToken();
+                    requestForTasks();
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    badRequestHandle("Не удаловсь загрузить задачи");
+                }
+            });
+        }
+            else {
+            tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+            requestForTasks();
+        }
+    }
+
+    private void requestForTasks() {
         final ListView tasksList = findViewById(R.id.tasks_list);
         final ArrayList<TasksMap> list = new ArrayList<>();
-        mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+        final RetrofitClient retrofitClient = RetrofitClient.getInstance();
+        retrofitClient.getTasksRepository().getTasksByEventId(event_id, tokenID).enqueue(new Callback<Tasks>() {
             @Override
-            public void onComplete(@NonNull final Task<GetTokenResult> task) {
-                tokenID = task.getResult().getToken();
-                final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-                retrofitClient.getTasksRepository().getTasksByEventId(event_id, tokenID).enqueue(new Callback<Tasks>() {
-                    @Override
-                    public void onResponse(Call<Tasks> call, Response<Tasks> response) {
-                        List<DatumTasks> tasks = Arrays.asList(response.body().getData());
-                        for (int i = 0; i < tasks.size(); i++) {
-                            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                            Calendar cal = new GregorianCalendar();
-                            cal.setTimeInMillis(tasks.get(i).getDeadline_at());
-                            list.add(new TasksMap(tasks.get(i).getName(), format.format(cal.getTime()),Long.toString(tasks.get(i).getId())));
-                        }
-                        TextView title = findViewById(R.id.tasks_text);
-                        if (list.size() > 0) {
-                            title.setText("Задачи");
-                            ListAdapter adapter = new SimpleAdapter(getApplicationContext(), list, R.layout.view_agenda_drawable_task,
-                                    new String[]{TasksMap.NAME, TasksMap.TIME}, new int[]{R.id.view_agenda_event_title, R.id.view_agenda_event_time});
-                            tasksList.setAdapter(adapter);
-                        }
-                        else {
-                            title.setText("Нет задач");
-                        }
-                        progressBar.setVisibility(View.GONE);
+            public void onResponse(Call<Tasks> call, Response<Tasks> response) {
+                if (!response.isSuccessful()) {
+                    badRequestHandle("Не удаловсь загрузить задачи");
+                    return;
+                }
+                List<DatumTasks> tasks = Arrays.asList(response.body().getData());
+                for (int i = 0; i < tasks.size(); i++) {
+                    SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                    Calendar cal = new GregorianCalendar();
+                    cal.setTimeInMillis(tasks.get(i).getDeadline_at());
+                    list.add(new TasksMap(tasks.get(i).getName(), format.format(cal.getTime()),Long.toString(tasks.get(i).getId())));
+                }
+                TextView title = findViewById(R.id.tasks_text);
+                if (list.size() > 0) {
+                    title.setText("Задачи");
+                    SimpleAdapter adapter = new SimpleAdapter(getApplicationContext(), list, R.layout.view_agenda_drawable_task,
+                            new String[]{TasksMap.NAME, TasksMap.TIME}, new int[]{R.id.view_agenda_event_title, R.id.view_agenda_event_time});
+                    tasksList.setAdapter(adapter);
+                }
+                else {
+                    title.setText("Нет задач");
+                }
+                progressBar.setVisibility(View.GONE);
 
-                    }
+            }
 
-                    @Override
-                    public void onFailure(Call<Tasks> call, Throwable t) {
-
-                    }
-                });
+            @Override
+            public void onFailure(Call<Tasks> call, Throwable t) {
+                badRequestHandle("Не удаловсь загрузить задачи");
+                progressBar.setVisibility(View.GONE);
             }
         });
     }
 
-    public void initFields() {
+    private void initFields() {
         Bundle bundle = getIntent().getExtras();
         String name = bundle.getString("name");
         String descr = bundle.getString("description");
         String location = bundle.getString("location");
-        String startTime = bundle.getString("time_start");
-        String endTime = bundle.getString("time_end");
+        Calendar startTime = (Calendar) bundle.getSerializable("time_start");
+        Calendar startTimeCur = (Calendar) bundle.getSerializable("time_start_current");
+        Calendar endTimeCur = (Calendar) bundle.getSerializable("time_end_current");
         String rrule = bundle.getString("rrule");
         String owner = bundle.getString("owner");
 
@@ -267,23 +306,18 @@ public class InfoEventActivity extends AppCompatActivity {
             locText.setText(" не указано");
         else
             locText.setText(location);
-        startTimeText.setText(startTime);
-        durationText.setText(getDuration(startTime, endTime));
+
+        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+        startTimeText.setText(format.format(startTime.getTime()));
+        durationText.setText(getDuration(startTimeCur, endTimeCur));
         repeatText.setText(getRepeat(rrule));
     }
 
-    public String getDuration(String start, String end) {
-        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-        Calendar calStart = new GregorianCalendar();
-        Calendar calEnd = new GregorianCalendar();
-        try {
-             calStart.setTime(format.parse(start));
-             calEnd.setTime(format.parse(end));
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        LocalDateTime dateStart = LocalDateTime.of(calStart.get(Calendar.YEAR), calStart.get(Calendar.MONTH), calStart.get(Calendar.DAY_OF_MONTH), calStart.get(Calendar.HOUR_OF_DAY), calStart.get(Calendar.MINUTE));
-        LocalDateTime dateEnd = LocalDateTime.of(calEnd.get(Calendar.YEAR), calEnd.get(Calendar.MONTH), calEnd.get(Calendar.DAY_OF_MONTH), calEnd.get(Calendar.HOUR_OF_DAY), calEnd.get(Calendar.MINUTE));
+    private String getDuration(Calendar calStart, Calendar calEnd) {
+        LocalDateTime dateStart = LocalDateTime.of(calStart.get(Calendar.YEAR), calStart.get(Calendar.MONTH) + 1,
+                calStart.get(Calendar.DAY_OF_MONTH), calStart.get(Calendar.HOUR_OF_DAY), calStart.get(Calendar.MINUTE));
+        LocalDateTime dateEnd = LocalDateTime.of(calEnd.get(Calendar.YEAR), calEnd.get(Calendar.MONTH) + 1,
+                calEnd.get(Calendar.DAY_OF_MONTH), calEnd.get(Calendar.HOUR_OF_DAY), calEnd.get(Calendar.MINUTE));
         Period p = Period.between(dateStart.toLocalDate(), dateEnd.toLocalDate());
         String res = "";
         if (Math.abs(p.getYears()) != 0) {
@@ -303,43 +337,44 @@ public class InfoEventActivity extends AppCompatActivity {
                 res += Math.abs(p.getMonths()) + " месяцев ";
         }
         int add = 0;
-        if (dateStart.getDayOfMonth()+1 == dateEnd.getDayOfMonth() && dateStart.getMonth() == dateEnd.getMonth() && dateStart.getYear() == dateEnd.getYear())
+        if (dateStart.getDayOfMonth()+1 == dateEnd.getDayOfMonth() && dateStart.getMonth() == dateEnd.getMonth() &&
+                dateStart.getYear() == dateEnd.getYear())
             add = -1;
         if (Math.abs(p.getDays()+add) != 0) {
-            if (Math.abs(p.getDays()+add) == 1)
+            if (Math.abs(p.getDays()+add)%10 == 1)
                 res += Math.abs(p.getDays()+add) + " день ";
-            else if (Math.abs(p.getDays()+add) < 5)
+            else if (Math.abs(p.getDays()+add)%10 < 5 && Math.abs(p.getDays()+add)%10 > 0)
                 res += Math.abs(p.getDays()+add) + " дня ";
             else
-                res += Math.abs(p.getDays()+add) + " дней ";
+                res += Math.abs(p.getDays()+add)%10 + " дней ";
         }
 
-        if (dateStart.getDayOfMonth()+1 == dateEnd.getDayOfMonth() && dateStart.getMonth() == dateEnd.getMonth() && dateStart.getYear() == dateEnd.getYear()){
+        if (dateStart.getDayOfMonth()+1 == dateEnd.getDayOfMonth() && dateStart.getMonth() == dateEnd.getMonth() &&
+                dateStart.getYear() == dateEnd.getYear()){
             add = 24;
             if (add+dateEnd.getHour() - dateStart.getHour() != 0) {
-                if (Math.abs(add+dateEnd.getHour() - dateStart.getHour()) == 1)
+                if (Math.abs(add+dateEnd.getHour() - dateStart.getHour())%10 == 1)
                     res += Math.abs(add+dateEnd.getHour() - dateStart.getHour()) + " час ";
-                else if (Math.abs(add+dateEnd.getHour() - dateStart.getHour()) < 5)
+                else if (Math.abs(add+dateEnd.getHour() - dateStart.getHour())%10 < 5 && Math.abs(add+dateEnd.getHour() - dateStart.getHour())%10 > 0)
                     res += Math.abs(add+dateEnd.getHour() - dateStart.getHour()) + " часа ";
                 else
                     res += Math.abs(add+dateEnd.getHour() - dateStart.getHour()) + " часов ";
             }
-
         }
         else {
             if (dateEnd.getHour() - dateStart.getHour() != 0) {
-                if (Math.abs(dateEnd.getHour() - dateStart.getHour()) == 1)
+                if (Math.abs(dateEnd.getHour() - dateStart.getHour())%10 == 1)
                     res += Math.abs(dateEnd.getHour() - dateStart.getHour()) + " час ";
-                else if (Math.abs(dateEnd.getHour() - dateStart.getHour()) < 5)
+                else if (Math.abs(dateEnd.getHour() - dateStart.getHour())%10 < 5 && Math.abs(dateEnd.getHour() - dateStart.getHour())%10 > 0)
                     res += Math.abs(dateEnd.getHour() - dateStart.getHour()) + " часа ";
                 else
                     res += Math.abs(dateEnd.getHour() - dateStart.getHour()) + " часов ";
             }
         }
         if (Math.abs(dateEnd.getMinute()-dateStart.getMinute()) != 0) {
-            if (Math.abs(dateEnd.getMinute()-dateStart.getMinute()) == 1)
+            if (Math.abs(dateEnd.getMinute()-dateStart.getMinute())%10 == 1)
                 res += Math.abs(dateEnd.getMinute()-dateStart.getMinute()) + " минута ";
-            else if (Math.abs(dateEnd.getMinute()-dateStart.getMinute()) < 5)
+            else if (Math.abs(dateEnd.getMinute()-dateStart.getMinute())%10 < 5 && Math.abs(dateEnd.getMinute()-dateStart.getMinute())%10 > 0)
                 res += Math.abs(dateEnd.getMinute()-dateStart.getMinute()) + " минуты ";
             else
                 res += Math.abs(dateEnd.getMinute()-dateStart.getMinute()) + " минут ";
@@ -347,7 +382,7 @@ public class InfoEventActivity extends AppCompatActivity {
         return res;
     }
 
-    public String getRepeat(String rrule) {
+    private String getRepeat(String rrule) {
         RRule rule = null;
         try {
             rule = new RRule("RRULE:" + rrule);

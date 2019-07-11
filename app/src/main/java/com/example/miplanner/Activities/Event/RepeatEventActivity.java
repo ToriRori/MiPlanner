@@ -57,70 +57,29 @@ public class RepeatEventActivity extends AppCompatActivity {
 
         initFields();
 
-        final Button monBtn = findViewById(R.id.monday_btn);
-        final Button tueBtn = findViewById(R.id.tuesday_btn);
-        final Button wedBtn = findViewById(R.id.wednesday_btn);
-        final Button thuBtn = findViewById(R.id.thursday_btn);
-        final Button friBtn = findViewById(R.id.friday_btn);
-        final Button satBtn = findViewById(R.id.saturday_btn);
-        final Button sunBtn = findViewById(R.id.sunday_btn);
-
-
         Button addRepeat = findViewById(R.id.finish);
         addRepeat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                String ok = bundle.getString("edit");
+                String isForEdit = bundle.getString("edit");
 
                 Intent intent;
-                if (ok != null)
+                if (isForEdit != null)
                     intent = new Intent(RepeatEventActivity.this, EditEventActivity.class);
                 else
                     intent = new Intent(RepeatEventActivity.this, AddEventActivity.class);
-                if (repeatTimes.getText().equals("")) {
+
+                if (repeatTimes.getText().toString().equals("")) {
                     Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 String week = "";
                 if (repeatType.getSelectedItemPosition() == 1) { //collect chosen days for week repeat
-                    if (monBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        week = "MO";
-                    if (tueBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        if (week.equals(""))
-                            week = "TU";
-                        else
-                            week += ",TU";
-                    if (wedBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        if (week.equals(""))
-                            week = "WE";
-                        else
-                            week += ",WE";
-                    if (thuBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        if (week.equals(""))
-                            week = "TH";
-                        else
-                            week += ",TH";
-                    if (friBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        if (week.equals(""))
-                            week = "FR";
-                        else
-                            week += ",FR";
-                    if (satBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        if (week.equals(""))
-                            week = "SA";
-                        else
-                            week += ",SA";
-                    if (sunBtn.getCurrentTextColor() == getResources().getColor(R.color.white))
-                        if (week.equals(""))
-                            week = "SU";
-                        else
-                            week += ",SU";
-                    if (week.equals("")) {
-                        Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
+                    week = getWeekDays();
+                    if (week == null)
                         return;
-                    }
                 }
 
                 String rrule = "FREQ=";
@@ -138,7 +97,7 @@ public class RepeatEventActivity extends AppCompatActivity {
                         rrule += "MONTHLY;";
                         rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
                         break;
-                    case 4:
+                    case 3:
                         rrule += "YEARLY;";
                         rrule += "INTERVAL="+repeatTimes.getText().toString()+";";
                         break;
@@ -169,10 +128,8 @@ public class RepeatEventActivity extends AppCompatActivity {
 
 
                 intent.putExtra("name", bundle.getString("name"));
-                intent.putExtra("start_date", bundle.getString("start_date"));
-                intent.putExtra("start_time", bundle.getString("start_time"));
-                intent.putExtra("end_date", bundle.getString("end_date"));
-                intent.putExtra("end_time", bundle.getString("end_time"));
+                intent.putExtra("start_date", bundle.getSerializable("start_date"));
+                intent.putExtra("end_date", bundle.getSerializable("end_date"));
                 intent.putExtra("descr", bundle.getString("descr"));
                 intent.putExtra("loc", bundle.getString("loc"));
                 intent.putExtra("event_id", bundle.getLong("event_id"));
@@ -183,26 +140,56 @@ public class RepeatEventActivity extends AppCompatActivity {
 
     }
 
-    public void initFields() {
+    private String getWeekDays() {
+        Button[] weekBtns = new Button[7];
+        weekBtns[0] = findViewById(R.id.monday_btn);
+        weekBtns[1] = findViewById(R.id.tuesday_btn);
+        weekBtns[2] = findViewById(R.id.wednesday_btn);
+        weekBtns[3] = findViewById(R.id.thursday_btn);
+        weekBtns[4] = findViewById(R.id.friday_btn);
+        weekBtns[5] = findViewById(R.id.saturday_btn);
+        weekBtns[6] = findViewById(R.id.sunday_btn);
+
+        String[] weekText = {"MO", "TU", "WE", "TH", "FR", "SA", "SU"};
+        String week = "";
+
+        for (int i = 0; i < 7; i++) {
+            if (weekBtns[i].getCurrentTextColor() == getResources().getColor(R.color.white))
+                if (week.equals(""))
+                    week = weekText[i];
+                else
+                    week += ","+weekText[i];
+        }
+        if (week.equals("")) {
+            Toast.makeText(RepeatEventActivity.this, "Некорректные введенные данные", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+        return week;
+    }
+
+    private void initFields() {
         final EditText timesCount = findViewById(R.id.timesCount);
         final EditText repeatTimes = findViewById(R.id.countRepeat);
         final Spinner repeatType = findViewById(R.id.spinner);
         final RadioGroup ending = findViewById(R.id.endRepeat);
         final RadioButton neverEnding = findViewById(R.id.neverEnding);
-        final RadioButton dayEnding = findViewById(R.id.dayEnding);
         dateEnding = findViewById(R.id.dateEnding);
         final RadioButton timesEnding = findViewById(R.id.timesEnding);
-        final Button monBtn = findViewById(R.id.monday_btn);
-        final Button tueBtn = findViewById(R.id.tuesday_btn);
-        final Button wedBtn = findViewById(R.id.wednesday_btn);
-        final Button thuBtn = findViewById(R.id.thursday_btn);
-        final Button friBtn = findViewById(R.id.friday_btn);
-        final Button satBtn = findViewById(R.id.saturday_btn);
-        final Button sunBtn = findViewById(R.id.sunday_btn);
+        Button[] weekBtns = new Button[7];
+        weekBtns[0] = findViewById(R.id.sunday_btn);
+        weekBtns[1] = findViewById(R.id.monday_btn);
+        weekBtns[2] = findViewById(R.id.tuesday_btn);
+        weekBtns[3] = findViewById(R.id.wednesday_btn);
+        weekBtns[4] = findViewById(R.id.thursday_btn);
+        weekBtns[5] = findViewById(R.id.friday_btn);
+        weekBtns[6] = findViewById(R.id.saturday_btn);
+
 
         final Bundle bundle = getIntent().getExtras();
-        String endDate = bundle.getString("end_date");
-        dateEnding.setText(endDate);
+        Calendar endDate = (Calendar) bundle.getSerializable("end_date");
+        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+        dateEnding.setText(format.format(endDate.getTime()));
+        repeatTimes.setText("1");
         timesCount.setText("1");
 
         dateEnding.setOnClickListener(new View.OnClickListener() {
@@ -214,7 +201,7 @@ public class RepeatEventActivity extends AppCompatActivity {
             }
         });
 
-        if (bundle.getString("ok") != null) {
+        if (bundle.getBoolean("filled")) {
             String rrule = bundle.getString("rrule");
             if (rrule != null) {
                 RRule rule = null;
@@ -231,36 +218,8 @@ public class RepeatEventActivity extends AppCompatActivity {
                         repeatType.setSelection(1);
                         List<WeekdayNum> days  = rule.getByDay();
                         for (WeekdayNum day : days) {
-                            switch(day.num) {
-                                case 1:
-                                    monBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                    monBtn.setTextColor(getResources().getColor(R.color.white));
-                                    break;
-                                case 2:
-                                    tueBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                    tueBtn.setTextColor(getResources().getColor(R.color.white));
-                                    break;
-                                case 3:
-                                    wedBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                    wedBtn.setTextColor(getResources().getColor(R.color.white));
-                                    break;
-                                case 4:
-                                    thuBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                    thuBtn.setTextColor(getResources().getColor(R.color.white));
-                                    break;
-                                case 5:
-                                    friBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                    friBtn.setTextColor(getResources().getColor(R.color.white));
-                                    break;
-                                case 6:
-                                    satBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                    satBtn.setTextColor(getResources().getColor(R.color.white));
-                                    break;
-                                case 7:
-                                    sunBtn.setBackground(getResources().getDrawable(R.drawable.corners3));
-                                    sunBtn.setTextColor(getResources().getColor(R.color.white));
-                                    break;
-                            }
+                            weekBtns[day.wday.jsDayNum].setBackground(getResources().getDrawable(R.drawable.corners3));
+                            weekBtns[day.wday.jsDayNum].setTextColor(getResources().getColor(R.color.white));
                         }
                         break;
                     case MONTHLY:
@@ -288,7 +247,7 @@ public class RepeatEventActivity extends AppCompatActivity {
         }
     }
 
-    public void setTypeRepeatAdapter() {
+    private void setTypeRepeatAdapter() {
         final Spinner repeatType = findViewById(R.id.spinner);
         String[] types = {"день", "неделя", "месяц", "год"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, types);
@@ -296,7 +255,7 @@ public class RepeatEventActivity extends AppCompatActivity {
         repeatType.setAdapter(adapter);
     }
 
-    public void setWeekButtonsListeners() {
+    private void setWeekButtonsListeners() {
         Button btn[] = new Button[7];
         btn[0] = findViewById(R.id.monday_btn);
         btn[1] = findViewById(R.id.tuesday_btn);
@@ -323,7 +282,7 @@ public class RepeatEventActivity extends AppCompatActivity {
         }
     }
 
-    public void setLayoutsForAdapter() {
+    private void setLayoutsForAdapter() {
         final Spinner repeatType = findViewById(R.id.spinner);
         final LinearLayout weekRepeat = findViewById(R.id.week_attr);
         final LinearLayout monthRepeat = findViewById(R.id.month_attr);
@@ -333,36 +292,16 @@ public class RepeatEventActivity extends AppCompatActivity {
         AdapterView.OnItemSelectedListener itemSelectedListener = new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                switch (position) {
-                    case 0:
-                        weekRepeat.setVisibility(View.GONE);
-                        monthRepeat.setVisibility(View.GONE);
-                        params.addRule(RelativeLayout.BELOW, R.id.spinner);
-                        endText.setLayoutParams(params);
-                        params.setMargins(68,20,20,0);
-                        endText.setLayoutParams(params);
-                        break;
-                    case 1:
-                        weekRepeat.setVisibility(View.VISIBLE);
-                        monthRepeat.setVisibility(View.GONE);
-                        params.addRule(RelativeLayout.BELOW, R.id.week_attr);
-                        params.setMargins(68,20,20,0);
-                        endText.setLayoutParams(params);
-                        break;
-                    case 2:
-                        weekRepeat.setVisibility(View.GONE);
-                        monthRepeat.setVisibility(View.GONE);
-                        params.addRule(RelativeLayout.BELOW, R.id.month_attr);
-                        params.setMargins(68,20,20,0);
-                        endText.setLayoutParams(params);
-                        break;
-                    case 3:
-                        weekRepeat.setVisibility(View.GONE);
-                        monthRepeat.setVisibility(View.GONE);
-                        params.addRule(RelativeLayout.BELOW, R.id.spinner);
-                        params.setMargins(68,20,20,0);
-                        endText.setLayoutParams(params);
-                        break;
+                monthRepeat.setVisibility(View.GONE);
+                params.setMargins(68,20,20,0);
+                endText.setLayoutParams(params);
+                if (position == 1) {
+                    weekRepeat.setVisibility(View.VISIBLE);
+                    params.addRule(RelativeLayout.BELOW, R.id.week_attr);
+                }
+                else {
+                    weekRepeat.setVisibility(View.GONE);
+                    params.addRule(RelativeLayout.BELOW, R.id.spinner);
                 }
             }
 

@@ -16,28 +16,12 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <ImageButton
-            android:layout_marginTop="5dp"
-            android:layout_marginLeft="10dp"
-            android:id="@+id/button_back"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:textSize="26dp"
-            android:textColor="@color/theme_primary"
-            android:background="@drawable/corners4"
-            android:src="@drawable/ic_back"/>
-
-    </LinearLayout>
+        android:orientation="vertical"
+        android:layout_marginTop="10dp">
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -225,6 +209,9 @@
             android:text="+" />
 
     </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
 
     <ListView
         android:layout_width="match_parent"
@@ -232,10 +219,6 @@
         android:id="@+id/tasks_list">
 
     </ListView>
-
-        </LinearLayout>
-
-    </ScrollView>
 
     </LinearLayout>
 </FrameLayout>

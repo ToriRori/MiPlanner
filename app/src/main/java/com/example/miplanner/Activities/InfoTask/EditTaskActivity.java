@@ -17,6 +17,7 @@ import com.example.miplanner.POJO.Events;
 import com.example.miplanner.R;
 import com.example.miplanner.RetrofitClient;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
@@ -45,7 +46,6 @@ public class EditTaskActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
 
-        //mDbHelper = new CalendarDbHelper(this);
         initFields();
 
         addBtn.setOnClickListener(new View.OnClickListener() {
@@ -63,13 +63,8 @@ public class EditTaskActivity extends AppCompatActivity {
                 }
 
                 Calendar cal = new GregorianCalendar();
-                SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-                try {
-                    cal.setTime(format.parse(dpEnd.getDayOfMonth()+"."+(dpEnd.getMonth()+1)+"."+dpEnd.getYear()+" "+
-                            tpEnd.getHour()+":"+tpEnd.getMinute()));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                cal.set(dpEnd.getYear(), dpEnd.getMonth(), dpEnd.getDayOfMonth(),
+                        tpEnd.getHour(), tpEnd.getMinute());
 
                 final DatumTasks taskNew = new DatumTasks("", 0, cal.getTimeInMillis(),nameTask.getText().toString(),"");
 
@@ -79,50 +74,75 @@ public class EditTaskActivity extends AppCompatActivity {
             }
         });
     }
-    public void requestEditTask(final DatumTasks taskNew) {
+
+    private void badRequestHandle() {
+        progressBar.setVisibility(View.GONE);
+        Toast.makeText(EditTaskActivity.this, "Не удалось добавить задачу", Toast.LENGTH_SHORT).show();
+    }
+
+    private void requestEditTask(final DatumTasks taskNew) {
+        if (mAuth.getCurrentUser() == null || mAuth.getCurrentUser().getIdToken(false) == null) {
+            mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                @Override
+                public void onComplete(@NonNull Task<GetTokenResult> task) {
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(EditTaskActivity.this, "Не удалось добавить задачу", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    tokenID = task.getResult().getToken();
+                    editTask(taskNew);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                   badRequestHandle();
+                }
+            });
+        }
+        else {
+            tokenID = mAuth.getCurrentUser().getIdToken(false).getResult().getToken();
+            editTask(taskNew);
+        }
+    }
+
+    private void editTask(DatumTasks taskNew) {
         final Bundle bundle = getIntent().getExtras();
         final RetrofitClient retrofitClient = RetrofitClient.getInstance();
-        mAuth.getCurrentUser().getIdToken(true).addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+        retrofitClient.getTasksRepository().update(Long.parseLong(bundle.getString("task_id")), taskNew, tokenID).enqueue(new Callback<Events>() {
             @Override
-            public void onComplete(@NonNull Task<GetTokenResult> task) {
-                tokenID = task.getResult().getToken();
-                retrofitClient.getTasksRepository().update(Long.parseLong(bundle.getString("task_id")), taskNew, tokenID).enqueue(new Callback<Events>() {
-                    @Override
-                    public void onResponse(Call<Events> call, Response<Events> response) {
-                        if (response.code() != 200) {
-                            Toast.makeText(EditTaskActivity.this, "Не удалось изменить задачу", Toast.LENGTH_SHORT).show();
-                            progressBar.setVisibility(View.GONE);
-                            return;
-                        }
-                        Intent intent = new Intent(EditTaskActivity.this, InfoEventActivity.class);
+            public void onResponse(Call<Events> call, Response<Events> response) {
+                if (!response.isSuccessful()) {
+                    badRequestHandle();
+                    return;
+                }
+                Intent intent = new Intent(EditTaskActivity.this, InfoEventActivity.class);
 
-                        Bundle bundle1 = new Bundle();
-                        bundle1.putString("name", bundle.getString("name"));
-                        bundle1.putString("description", bundle.getString("description"));
-                        bundle1.putString("location", bundle.getString("location"));
-                        bundle1.putString("time_start", bundle.getString("time_start"));
-                        bundle1.putString("time_end", bundle.getString("time_end"));
-                        bundle1.putString("owner", bundle.getString("owner"));
-                        bundle1.putString("rrule", bundle.getString("rrule"));
-                        bundle1.putLong("event_id", bundle.getLong("event_id"));
-                        bundle1.putLong("time_end_current", bundle.getLong("time_end_current"));
+                Bundle bundle1 = new Bundle();
+                bundle1.putString("name", bundle.getString("name"));
+                bundle1.putString("description", bundle.getString("description"));
+                bundle1.putString("location", bundle.getString("location"));
+                bundle1.putSerializable("time_start", bundle.getSerializable("time_start"));
+                bundle1.putSerializable("time_end", bundle.getSerializable("time_end"));
+                bundle1.putString("owner", bundle.getString("owner"));
+                bundle1.putString("rrule", bundle.getString("rrule"));
+                bundle1.putLong("event_id", bundle.getLong("event_id"));
+                bundle1.putSerializable("time_start_current", bundle.getSerializable("time_start_current"));
+                bundle1.putSerializable("time_end_current", bundle.getSerializable("time_end_current"));
 
-                        intent.putExtras(bundle1);
-                        startActivity(intent);
-                        progressBar.setVisibility(View.GONE);
-                        overridePendingTransition (R.anim.enter, R.anim.exit);
-                    }
+                intent.putExtras(bundle1);
+                startActivity(intent);
+                progressBar.setVisibility(View.GONE);
+                overridePendingTransition (R.anim.enter, R.anim.exit);
+            }
 
-                    @Override
-                    public void onFailure(Call<Events> call, Throwable t) {
-                        Toast.makeText(EditTaskActivity.this, "Не удалось изменить задачу", Toast.LENGTH_SHORT).show();
-                    }
-                });
+            @Override
+            public void onFailure(Call<Events> call, Throwable t) {
+                badRequestHandle();
             }
         });
     }
 
-    public void initFields() {
+    private void initFields() {
         Bundle bundle = getIntent().getExtras();
         EditText nameTask = findViewById(R.id.nameText);
         DatePicker dpEnd = findViewById(R.id.datePickerEnd);
